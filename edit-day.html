@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitness Tracker - Edit Day</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">Fitness Tracker</div>
+    <nav class="nav-bar">
+      <a href="index.html">Home</a>
+      <a href="goal-tracker.html">Goal Tracker</a>
+      <a href="edit-day.html" class="active">Edit Day</a>
+    </nav>
+  </header>
+
+  <main class="edit-page">
+    <section class="detail-card edit-day-card">
+      <h2>Edit selected day</h2>
+      <p class="selected-day" id="selected-day-label"></p>
+
+      <label for="note-text">Note</label>
+      <textarea id="note-text" rows="6" placeholder="Type your workout note, recovery plan, or goal here."></textarea>
+
+      <label for="alarm-time">Alarm time</label>
+      <input id="alarm-time" type="time" />
+
+      <label for="reminder-offset">Reminder ahead</label>
+      <select id="reminder-offset">
+        <option value="15">15 minutes before</option>
+        <option value="30">30 minutes before</option>
+        <option value="60" selected>1 hour before</option>
+        <option value="1440">1 day before</option>
+      </select>
+
+      <button id="save-button" type="button">Save note & alarm</button>
+      <button id="cancel-button" type="button" class="secondary-button">Back to tracker</button>
+    </section>
+  </main>
+
+  <script src="edit-day.js"></script>
+</body>
+</html>
