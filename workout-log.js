@@ -224,8 +224,13 @@ async function handleSubmit(event) {
   resetForm();
   render();
   showSaveFeedback(savedToServer
+<<<<<<< HEAD
     ? 'Workout saved to the shared server and added to your log.'
     : 'Workout saved locally. Sign in to the server to sync across devices.');
+=======
+    ? 'Workout saved to MySQL and added to your log.'
+    : 'Workout saved locally. Log in or start the server to persist to MySQL.');
+>>>>>>> 0d8ad2d3f94b0a4ba5ce907b65110187408ae31a
 }
 
 function deleteWorkout(id) {
@@ -244,6 +249,7 @@ function render() {
 
 async function init() {
   await loadWorkouts();
+<<<<<<< HEAD
   elements.form.addEventListener('submit', (event) => {
     event.preventDefault();
     handleSubmit(event);
@@ -252,6 +258,10 @@ async function init() {
     event.preventDefault();
     handleSubmit(event);
   });
+=======
+  elements.form.addEventListener('submit', handleSubmit);
+  elements.saveButton.addEventListener('click', handleSubmit);
+>>>>>>> 0d8ad2d3f94b0a4ba5ce907b65110187408ae31a
   elements.clearButton.addEventListener('click', resetForm);
   setDateConstraints();
   elements.workoutDate.value = getTodayString();
