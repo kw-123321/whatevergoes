@@ -5,7 +5,6 @@ const nodemailer = require('nodemailer');
 const session = require('express-session');
 const app = express();
 
-<<<<<<< HEAD
 const DATA_DIR = path.join(__dirname, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const WORKOUTS_FILE = path.join(DATA_DIR, 'workouts.json');
@@ -103,32 +102,6 @@ async function sendLoginEmail(address, name) {
     return false;
   }
 }
-=======
-// 1. Establish connection to your MySQL database schema
-// Use environment variables so collaborators can connect to a shared remote database.
-const dbHost = process.env.DB_HOST || 'localhost';
-const dbPort = process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306;
-const dbUser = process.env.DB_USER || 'root';
-const dbPassword = process.env.DB_PASSWORD || 'RP738964$';
-const dbName = process.env.DB_NAME || 'c270_fitnesstrackerusers';
-
-const db = mysql.createConnection({
-    host: dbHost,
-    port: dbPort,
-    user: dbUser,
-    password: dbPassword,
-    database: dbName,
-});
-
-// Connect to MySQL
-db.connect((err) => {
-    if (err) {
-        console.error('Error connecting to MySQL Database:', err);
-        return;
-    }
-    console.log(`Successfully connected to MySQL at ${dbHost}:${dbPort} using database ${dbName}`);
-});
->>>>>>> 0d8ad2d3f94b0a4ba5ce907b65110187408ae31a
 
 app.use(session({
   secret: 'fitness_tracker_secret_key',
