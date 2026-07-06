@@ -1,4 +1,8 @@
 const STORAGE_KEY = 'fitnessTrackerWorkouts';
+
+const SERVER_WORKOUTS_URL = '/api/workouts';
+const SERVER_SAVE_WORKOUT_URL = '/api/log-workout';
+
 const ALLOWED_ACTIVITIES = ['Gym', 'Cardio', 'Sports', 'Light activity', 'Cycling'];
 
 const state = {
@@ -23,17 +27,57 @@ const elements = {
   lastWorkout: document.getElementById('last-workout'),
 };
 
-function loadWorkouts() {
+async function loadWorkouts() {
+  let localStored = [];
+
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    state.workouts = stored ? JSON.parse(stored) : [];
+    localStored = stored ? JSON.parse(stored) : [];
   } catch (error) {
-    state.workouts = [];
+    localStored = [];
   }
+
+  try {
+    const response = await fetch(SERVER_WORKOUTS_URL, { credentials: 'same-origin' });
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data.workouts)) {
+        state.workouts = data.workouts.length ? data.workouts : localStored;
+        saveWorkouts();
+        return;
+      }
+    }
+  } catch (error) {
+    // Server unavailable or user not logged in; fall back to local data.
+  }
+
+  state.workouts = localStored;
 }
 
 function saveWorkouts() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.workouts));
+}
+
+async function saveWorkoutToServer(workout) {
+  const response = await fetch(SERVER_SAVE_WORKOUT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      date: workout.date,
+      activity: workout.name,
+      duration: workout.duration,
+      intensity: workout.intensity,
+      notes: workout.notes,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.message || 'Could not save workout to the server.');
+  }
+
+  return response.json();
 }
 
 function createWorkoutId() {
@@ -132,7 +176,7 @@ function populateForm(workout) {
   elements.workoutName.focus();
 }
 
-function handleSubmit(event) {
+async function handleSubmit(event) {
   event.preventDefault();
 
   const workout = {
@@ -146,6 +190,17 @@ function handleSubmit(event) {
 
   if (!workout.name || !workout.date || !Number.isFinite(workout.duration) || workout.duration <= 0) {
     window.alert("Please choose an activity, today's date, and a valid duration.");
+<<<<<<< HEAD
+=======
+    return;
+  }
+  if (!ALLOWED_ACTIVITIES.includes(workout.name)) {
+    window.alert('Please choose one of the allowed activities.');
+    return;
+  }
+  if (workout.date !== getTodayString()) {
+    window.alert("Please select today's date for your workout.");
+>>>>>>> 319c3beb2de56ac7c6ae98ee66a9f8d2a8857d84
     return;
   }
   if (!ALLOWED_ACTIVITIES.includes(workout.name)) {
@@ -157,6 +212,17 @@ function handleSubmit(event) {
     return;
   }
 
+  let savedToServer = false;
+
+  if (!state.editingId) {
+    try {
+      await saveWorkoutToServer(workout);
+      savedToServer = true;
+    } catch (error) {
+      console.warn('Server workout save failed:', error);
+    }
+  }
+
   if (state.editingId) {
     state.workouts = state.workouts.map((item) => (item.id === state.editingId ? workout : item));
   } else {
@@ -166,7 +232,13 @@ function handleSubmit(event) {
   saveWorkouts();
   resetForm();
   render();
+<<<<<<< HEAD
+  showSaveFeedback(savedToServer
+    ? 'Workout saved to MySQL and added to your log.'
+    : 'Workout saved locally. Log in or start the server to persist to MySQL.');
+=======
   showSaveFeedback('Workout saved and added to your log.');
+>>>>>>> 319c3beb2de56ac7c6ae98ee66a9f8d2a8857d84
 }
 
 function deleteWorkout(id) {
@@ -183,6 +255,12 @@ function render() {
   renderWorkoutList();
 }
 
+<<<<<<< HEAD
+async function init() {
+  await loadWorkouts();
+  elements.form.addEventListener('submit', handleSubmit);
+  elements.saveButton.addEventListener('click', handleSubmit);
+=======
 function init() {
   loadWorkouts();
   elements.form.addEventListener('submit', (event) => {
@@ -193,6 +271,7 @@ function init() {
     event.preventDefault();
     handleSubmit(event);
   });
+>>>>>>> 319c3beb2de56ac7c6ae98ee66a9f8d2a8857d84
   elements.clearButton.addEventListener('click', resetForm);
   setDateConstraints();
   elements.workoutDate.value = getTodayString();
@@ -200,3 +279,32 @@ function init() {
 }
 
 init();
+
+// ========================================================
+// SAFE DYNAMIC LOGOUT BUTTON INJECTOR
+// ========================================================
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Look for the navigation element (checking multiple common classes)
+    const navBar = document.querySelector(".nav-bar") || document.querySelector("nav") || document.querySelector(".site-header");
+    
+    // 2. Only add the button if the nav bar exists AND the button isn't already there
+    if (navBar && !document.querySelector(".logout-btn")) {
+        const logoutLink = document.createElement("a");
+        logoutLink.href = "logout.html";
+        logoutLink.className = "logout-btn";
+        logoutLink.textContent = "Logout";
+        
+        // Apply the exact styles so it renders correctly everywhere
+        logoutLink.style.marginLeft = "15px";
+        logoutLink.style.padding = "6px 12px";
+        logoutLink.style.backgroundColor = "#ff4d4d"; 
+        logoutLink.style.color = "white";
+        logoutLink.style.borderRadius = "4px";
+        logoutLink.style.fontWeight = "bold";
+        logoutLink.style.textDecoration = "none";
+        logoutLink.style.display = "inline-block";
+        
+        // Push it cleanly onto the end of the nav bar
+        navBar.appendChild(logoutLink);
+    }
+});
