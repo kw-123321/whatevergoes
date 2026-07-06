@@ -279,9 +279,10 @@ body {
 }
 
 .schedule-panel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 1.5rem;
-  grid-template-columns: 1.9fr 1fr;
 }
 
 .schedule-header,
@@ -296,10 +297,21 @@ body {
 
 .schedule-header {
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-end;
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 760px;
+  text-align: center;
+}
+
+.schedule-header > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
 }
 
 .summary-pill {
@@ -314,6 +326,11 @@ body {
   font-weight: 700;
 }
 
+.search-group {
+  width: min(100%, 360px);
+  min-width: min(100%, 320px);
+}
+
 .search-group label {
   display: block;
   margin-bottom: 0.5rem;
@@ -322,8 +339,9 @@ body {
 
 .search-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.75rem;
+  align-items: center;
 }
 
 .search-row input,
@@ -338,9 +356,30 @@ body {
   font: inherit;
 }
 
+.time-picker-field {
+  position: relative;
+}
+
+.detail-card input[type="time"] {
+  color: #111827;
+  cursor: pointer;
+  position: relative;
+}
+
+.detail-card input[type="time"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .search-row button,
 #save-button,
+#save-note-button,
 .secondary-button,
+#cancel-note-button,
 #edit-day-button {
   border: none;
   background: #6366f1;
@@ -351,10 +390,28 @@ body {
   padding: 0.95rem 1rem;
 }
 
-.secondary-button {
+.secondary-button,
+#cancel-note-button {
   background: #ffffff;
   color: #374151;
   border: 1px solid #cbd5e1;
+}
+
+.note-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.note-form-actions button {
+  flex: 1 1 180px;
+}
+
+.form-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: #6b7280;
 }
 
 .edit-page {
@@ -395,6 +452,9 @@ body {
 .month-calendar {
   display: grid;
   gap: 1rem;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .calendar-header {
@@ -543,7 +603,12 @@ body {
 
 @media (max-width: 1040px) {
   .schedule-panel {
-    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .schedule-header,
+  .month-calendar {
+    max-width: 100%;
   }
 }
 

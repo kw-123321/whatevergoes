@@ -71,8 +71,11 @@
           <label for="new-note-text">Note</label>
           <textarea id="new-note-text" rows="4" placeholder="Type your workout plan, recovery note, or reminder."></textarea>
 
-          <label for="new-note-time">Alarm time</label>
-          <input id="new-note-time" type="time" />
+          <label for="new-note-time">Reminder time</label>
+          <div class="time-picker-field">
+            <input id="new-note-time" type="time" aria-label="Choose a reminder time" />
+          </div>
+          <p class="form-hint">Pick a time that feels easy to remember.</p>
 
           <label for="new-note-offset">Reminder ahead</label>
           <select id="new-note-offset">
