@@ -8,6 +8,8 @@ const state = {
   selectedDate: new Date(),
   notes: {},
   editingNoteId: null,
+  selectedNoteId: null,
+  expandedNoteId: null,
 };
 
 const elements = {
@@ -20,6 +22,7 @@ const elements = {
   selectedDayLabel: document.getElementById('selected-day-label'),
   selectedSummary: document.getElementById('selected-summary'),
   notesList: document.getElementById('notes-list'),
+  newNoteTitle: document.getElementById('new-note-title'),
   newNoteText: document.getElementById('new-note-text'),
   newNoteTime: document.getElementById('new-note-time'),
   newNoteOffset: document.getElementById('new-note-offset'),
@@ -38,6 +41,7 @@ function normalizeNotes(rawNotes) {
     } else if (typeof value === 'string' && value.trim()) {
       notes[key] = [{
         id: nextNoteId(),
+        title: value.trim().slice(0, 40),
         text: value,
         time: '',
         offset: '60',
@@ -46,6 +50,7 @@ function normalizeNotes(rawNotes) {
     } else if (value && typeof value === 'object' && typeof value.text === 'string') {
       notes[key] = [{
         id: nextNoteId(),
+        title: value.title || '',
         text: value.text,
         time: value.time || '',
         offset: value.offset || '60',
@@ -197,44 +202,108 @@ function renderDetailPanel() {
   renderNotesList();
 }
 
+function getNoteTitle(note) {
+  if (note.title && note.title.trim()) {
+    return note.title.trim();
+  }
+  if (note.text && note.text.trim()) {
+    return note.text.trim().slice(0, 32);
+  }
+  return 'Untitled note';
+}
+
+function getNotePreview(text) {
+  const plainText = (text || '').replace(/<[^>]*>/g, '').trim();
+  if (!plainText) return '';
+  const lines = plainText.split(/\r?\n/).filter(Boolean);
+  const previewLines = lines.slice(0, 3).join('\n');
+  return previewLines;
+}
+
 function renderNotesList() {
   elements.notesList.innerHTML = '';
   const notes = getCurrentNotes();
   if (notes.length === 0) {
-    const item = document.createElement('li');
-    item.textContent = 'No notes yet for this day. Use the form below to add one.';
-    elements.notesList.appendChild(item);
+    const emptyState = document.createElement('div');
+    emptyState.className = 'notes-empty-state';
+    emptyState.textContent = 'No notes yet for this day. Use the form below to add one.';
+    elements.notesList.appendChild(emptyState);
     return;
   }
 
+  const activeNote = notes.find((note) => note.id === state.selectedNoteId) || notes[0];
+  if (activeNote) {
+    state.selectedNoteId = activeNote.id;
+  }
+
+  const tabs = document.createElement('div');
+  tabs.className = 'note-tabs';
+
   notes.forEach((note) => {
-    const item = document.createElement('li');
-    item.className = 'selected-note-item';
-    item.innerHTML = `
-      <div class="note-text">${note.text}</div>
-      ${note.time ? `<div class="note-alarm">⏰ ${note.time} (${note.offsetText})</div>` : ''}
-      <div class="note-item-actions">
-        <button type="button" class="edit-note-button" data-note-id="${note.id}">Edit</button>
-        <button type="button" class="delete-note-button" data-note-id="${note.id}">Delete</button>
-      </div>
-    `;
-
-    const editButton = item.querySelector('.edit-note-button');
-    editButton.addEventListener('click', () => {
-      state.editingNoteId = note.id;
-      populateNoteForm(note);
+    const tabButton = document.createElement('button');
+    tabButton.type = 'button';
+    tabButton.className = 'note-tab';
+    if (activeNote && activeNote.id === note.id) {
+      tabButton.classList.add('active');
+    }
+    tabButton.innerHTML = `<span>${getNoteTitle(note)}</span>`;
+    tabButton.addEventListener('click', () => {
+      state.selectedNoteId = note.id;
+      state.editingNoteId = null;
+      renderAll();
     });
-
-    const deleteButton = item.querySelector('.delete-note-button');
-    deleteButton.addEventListener('click', () => {
-      deleteNote(note.id);
-    });
-
-    elements.notesList.appendChild(item);
+    tabs.appendChild(tabButton);
   });
+
+  const detailCard = document.createElement('div');
+  detailCard.className = 'note-detail-card';
+  const previewText = getNotePreview(activeNote.text);
+  const isExpanded = state.expandedNoteId === activeNote.id;
+  const bodyContent = isExpanded
+    ? (activeNote.text || 'No details yet.')
+    : previewText || 'No details yet.';
+  detailCard.innerHTML = `
+    <div class="note-detail-header">
+      <h4>${getNoteTitle(activeNote)}</h4>
+      <div class="note-item-actions">
+        <button type="button" class="view-full-note">View</button>
+        <button type="button" class="edit-note-button" data-note-id="${activeNote.id}">Edit</button>
+        <button type="button" class="delete-note-button" data-note-id="${activeNote.id}">Delete</button>
+      </div>
+    </div>
+    <div class="note-detail-body ${isExpanded ? '' : 'note-preview'}">
+      <p class="note-detail-text">${bodyContent}</p>
+    </div>
+    ${activeNote.time ? `<div class="note-alarm">⏰ ${activeNote.time} (${activeNote.offsetText})</div>` : ''}
+  `;
+
+  const editButton = detailCard.querySelector('.edit-note-button');
+  editButton.addEventListener('click', () => {
+    state.editingNoteId = activeNote.id;
+    state.selectedNoteId = activeNote.id;
+    populateNoteForm(activeNote);
+    renderAll();
+  });
+
+  const deleteButton = detailCard.querySelector('.delete-note-button');
+  deleteButton.addEventListener('click', () => {
+    deleteNote(activeNote.id);
+  });
+
+  const fullNoteButton = detailCard.querySelector('.view-full-note');
+  if (fullNoteButton) {
+    fullNoteButton.addEventListener('click', () => {
+      state.expandedNoteId = activeNote.id;
+      renderAll();
+    });
+  }
+
+  elements.notesList.appendChild(tabs);
+  elements.notesList.appendChild(detailCard);
 }
 
 function resetNoteForm() {
+  elements.newNoteTitle.value = '';
   elements.newNoteText.value = '';
   elements.newNoteTime.value = '';
   elements.newNoteOffset.value = '60';
@@ -243,6 +312,7 @@ function resetNoteForm() {
 }
 
 function populateNoteForm(note) {
+  elements.newNoteTitle.value = note.title || '';
   elements.newNoteText.value = note.text;
   elements.newNoteTime.value = note.time || '';
   elements.newNoteOffset.value = note.offset || '60';
@@ -256,6 +326,7 @@ function saveNote() {
     return;
   }
 
+  const noteTitle = elements.newNoteTitle.value.trim() || (noteText.length > 32 ? `${noteText.slice(0, 32)}...` : noteText);
   const key = getSelectedDateKey();
   const notes = getCurrentNotes();
   const time = elements.newNoteTime.value;
@@ -265,6 +336,7 @@ function saveNote() {
   if (state.editingNoteId) {
     const existing = notes.find((note) => note.id === state.editingNoteId);
     if (existing) {
+      existing.title = noteTitle;
       existing.text = noteText;
       existing.time = time;
       existing.offset = offset;
@@ -273,6 +345,7 @@ function saveNote() {
   } else {
     notes.push({
       id: nextNoteId(),
+      title: noteTitle,
       text: noteText,
       time,
       offset,
@@ -281,6 +354,7 @@ function saveNote() {
   }
 
   state.notes[key] = notes;
+  state.selectedNoteId = state.editingNoteId || notes[notes.length - 1].id;
   saveState();
   resetNoteForm();
   renderAll();
@@ -291,8 +365,10 @@ function deleteNote(noteId) {
   const notes = getCurrentNotes().filter((note) => note.id !== noteId);
   if (notes.length > 0) {
     state.notes[key] = notes;
+    state.selectedNoteId = notes[0].id;
   } else {
     delete state.notes[key];
+    state.selectedNoteId = null;
   }
   saveState();
   resetNoteForm();

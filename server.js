@@ -94,6 +94,62 @@ app.get('/api/current-user', (req, res) => {
     }
 });
 
+// 8. WORKOUTS API ROUTE (Returns logged-in user's workouts from MySQL)
+app.get('/api/workouts', (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ workouts: [] });
+    }
+
+    const userId = req.session.user.id;
+    const sqlQuery = "SELECT workoutId, date, activity, duration, intensity, notes FROM workoutlog WHERE userId = ? ORDER BY date DESC";
+
+    db.query(sqlQuery, [userId], (err, results) => {
+        if (err) {
+            console.error("Database workout load error:", err);
+            return res.status(500).json({ workouts: [], message: "Failed to load workouts." });
+        }
+
+        const workouts = results.map((row) => ({
+            id: row.workoutId,
+            date: row.date,
+            name: row.activity,
+            duration: row.duration,
+            intensity: row.intensity,
+            notes: row.notes,
+        }));
+
+        return res.json({ workouts });
+    });
+});
+
+// 9. LOG WORKOUT ROUTE (Saves workout data linked to the logged-in user)
+app.post('/api/log-workout', (req, res) => {
+    // 1. Make sure a user is actually logged in before saving a workout
+    if (!req.session.user) {
+        return res.status(401).send("<h1>Unauthorized. Please log in first.</h1><a href='/login.html'>Go to Login</a>");
+    }
+
+    // 2. Extract the data sent from the frontend form
+    const { date, activity, duration, intensity, notes } = req.body;
+    
+    // Grab the active user's ID from their session token
+    const userId = req.session.user.id; 
+
+    // 3. Match the columns in your MySQL workbench table perfectly
+    const sqlQuery = "INSERT INTO workoutlog (userId, date, activity, duration, intensity, notes) VALUES (?, ?, ?, ?, ?, ?)";
+    
+    db.query(sqlQuery, [userId, date, activity, duration, intensity, notes || null], (err, result) => {
+        if (err) {
+            console.error("Database workout save error:", err);
+            return res.status(500).json({ success: false, message: "Failed to save workout to the database." });
+        }
+        
+        console.log(`Workout saved successfully for User ID ${userId}!`);
+        // Send a success JSON response back to your frontend script
+        return res.json({ success: true, message: "Workout saved successfully!" });
+    });
+});
+
 // 8. Start the server on Port 3000
 const PORT = 3000;
 app.listen(PORT, () => {

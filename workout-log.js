@@ -1,4 +1,7 @@
 const STORAGE_KEY = 'fitnessTrackerWorkouts';
+const SERVER_WORKOUTS_URL = '/api/workouts';
+const SERVER_SAVE_WORKOUT_URL = '/api/log-workout';
+const ALLOWED_ACTIVITIES = ['Gym', 'Cardio', 'Sports', 'Light activity', 'Cycling'];
 
 const state = {
   workouts: [],
@@ -11,40 +14,96 @@ const elements = {
   workoutDate: document.getElementById('workout-date'),
   workoutName: document.getElementById('workout-name'),
   workoutDuration: document.getElementById('workout-duration'),
-  workoutCalories: document.getElementById('workout-calories'),
   workoutIntensity: document.getElementById('workout-intensity'),
   workoutNotes: document.getElementById('workout-notes'),
   saveButton: document.getElementById('save-workout-button'),
   clearButton: document.getElementById('clear-form-button'),
+  saveFeedback: document.getElementById('save-feedback'),
   workoutList: document.getElementById('workout-list'),
   totalWorkouts: document.getElementById('total-workouts'),
   weeklyWorkouts: document.getElementById('weekly-workouts'),
   lastWorkout: document.getElementById('last-workout'),
 };
 
-function loadWorkouts() {
+async function loadWorkouts() {
+  let localStored = [];
+
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    state.workouts = stored ? JSON.parse(stored) : [];
+    localStored = stored ? JSON.parse(stored) : [];
   } catch (error) {
-    state.workouts = [];
+    localStored = [];
   }
+
+  try {
+    const response = await fetch(SERVER_WORKOUTS_URL, { credentials: 'same-origin' });
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data.workouts)) {
+        state.workouts = data.workouts.length ? data.workouts : localStored;
+        saveWorkouts();
+        return;
+      }
+    }
+  } catch (error) {
+    // Server unavailable or user not logged in; fall back to local data.
+  }
+
+  state.workouts = localStored;
 }
 
 function saveWorkouts() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.workouts));
 }
 
+async function saveWorkoutToServer(workout) {
+  const response = await fetch(SERVER_SAVE_WORKOUT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      date: workout.date,
+      activity: workout.name,
+      duration: workout.duration,
+      intensity: workout.intensity,
+      notes: workout.notes,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.message || 'Could not save workout to the server.');
+  }
+
+  return response.json();
+}
+
 function createWorkoutId() {
   return `workout-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
+function getTodayString() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function setDateConstraints() {
+  elements.workoutDate.value = getTodayString();
+}
+
 function resetForm() {
   elements.form.reset();
-  elements.workoutDate.value = new Date().toISOString().slice(0, 10);
+  setDateConstraints();
   elements.workoutIntensity.value = 'Moderate';
   state.editingId = null;
   elements.formTitle.textContent = 'Log a workout';
+}
+
+function showSaveFeedback(message) {
+  elements.saveFeedback.textContent = message;
 }
 
 function formatDisplayDate(dateValue) {
@@ -90,7 +149,6 @@ function renderWorkoutList() {
       </div>
       <div class="workout-meta">
         <span>${workout.duration} min</span>
-        <span>${workout.calories ? `${workout.calories} kcal` : 'Calories not set'}</span>
       </div>
       ${workout.notes ? `<p class="workout-notes-preview">${workout.notes}</p>` : ''}
       <div class="note-item-actions">
@@ -108,16 +166,15 @@ function renderWorkoutList() {
 function populateForm(workout) {
   state.editingId = workout.id;
   elements.formTitle.textContent = 'Edit workout';
-  elements.workoutDate.value = workout.date;
-  elements.workoutName.value = workout.name;
+  setDateConstraints();
+  elements.workoutName.value = ALLOWED_ACTIVITIES.includes(workout.name) ? workout.name : '';
   elements.workoutDuration.value = workout.duration;
-  elements.workoutCalories.value = workout.calories || '';
   elements.workoutIntensity.value = workout.intensity;
   elements.workoutNotes.value = workout.notes || '';
   elements.workoutName.focus();
 }
 
-function handleSubmit(event) {
+async function handleSubmit(event) {
   event.preventDefault();
 
   const workout = {
@@ -125,14 +182,32 @@ function handleSubmit(event) {
     date: elements.workoutDate.value,
     name: elements.workoutName.value.trim(),
     duration: Number(elements.workoutDuration.value),
-    calories: Number(elements.workoutCalories.value) || 0,
     intensity: elements.workoutIntensity.value,
     notes: elements.workoutNotes.value.trim(),
   };
 
   if (!workout.name || !workout.date || !Number.isFinite(workout.duration) || workout.duration <= 0) {
-    window.alert('Please enter a workout name, date, and duration.');
+    window.alert("Please choose an activity, today's date, and a valid duration.");
     return;
+  }
+  if (!ALLOWED_ACTIVITIES.includes(workout.name)) {
+    window.alert('Please choose one of the allowed activities.');
+    return;
+  }
+  if (workout.date !== getTodayString()) {
+    window.alert("Please select today's date for your workout.");
+    return;
+  }
+
+  let savedToServer = false;
+
+  if (!state.editingId) {
+    try {
+      await saveWorkoutToServer(workout);
+      savedToServer = true;
+    } catch (error) {
+      console.warn('Server workout save failed:', error);
+    }
   }
 
   if (state.editingId) {
@@ -144,6 +219,9 @@ function handleSubmit(event) {
   saveWorkouts();
   resetForm();
   render();
+  showSaveFeedback(savedToServer
+    ? 'Workout saved to MySQL and added to your log.'
+    : 'Workout saved locally. Log in or start the server to persist to MySQL.');
 }
 
 function deleteWorkout(id) {
@@ -160,11 +238,13 @@ function render() {
   renderWorkoutList();
 }
 
-function init() {
-  loadWorkouts();
+async function init() {
+  await loadWorkouts();
   elements.form.addEventListener('submit', handleSubmit);
+  elements.saveButton.addEventListener('click', handleSubmit);
   elements.clearButton.addEventListener('click', resetForm);
-  elements.workoutDate.value = new Date().toISOString().slice(0, 10);
+  setDateConstraints();
+  elements.workoutDate.value = getTodayString();
   render();
 }
 
