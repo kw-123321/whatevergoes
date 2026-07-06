@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitness Tracker - Nutrition Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">Fitness Tracker</div>
+    <nav class="nav-bar">
+      <a href="index.html">Home</a>
+      <a href="goal-tracker.html">Goal Tracker</a>
+      <a href="workout-log.html">Workout Log</a>
+      <a href="nutrition-tracker.html" class="active">Nutrition Tracker</a>
+    </nav>
+  </header>
+
+  <main class="workout-page">
+    <section class="workout-hero">
+      <div>
+        <div class="summary-pill">Nutrition logging</div>
+        <h1>Track what you eat, one meal at a time.</h1>
+        <p>
+          Log meals and snacks with calories and macros, and see your daily totals build up as you go.
+        </p>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span class="stat-label">Today's calories</span>
+          <strong id="today-calories">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Entries today</span>
+          <strong id="today-entries">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Last logged</span>
+          <strong id="last-entry">—</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="workout-grid">
+      <form class="detail-card form-card" id="nutrition-form">
+        <h2 id="form-title">Log a meal</h2>
+
+        <label for="entry-date">Date</label>
+        <input id="entry-date" type="date" required />
+
+        <label for="entry-meal-type">Meal type</label>
+        <select id="entry-meal-type">
+          <option value="Breakfast">Breakfast</option>
+          <option value="Lunch">Lunch</option>
+          <option value="Dinner">Dinner</option>
+          <option value="Snack">Snack</option>
+        </select>
+
+        <label for="entry-food">Food / meal name</label>
+        <input id="entry-food" type="text" placeholder="e.g. Grilled chicken rice bowl" required />
+
+        <div class="field-row">
+          <div>
+            <label for="entry-calories">Calories</label>
+            <input id="entry-calories" type="number" min="0" step="1" placeholder="450" required />
+          </div>
+          <div>
+            <label for="entry-protein">Protein (g)</label>
+            <input id="entry-protein" type="number" min="0" step="1" placeholder="30" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label for="entry-carbs">Carbs (g)</label>
+            <input id="entry-carbs" type="number" min="0" step="1" placeholder="50" />
+          </div>
+          <div>
+            <label for="entry-fat">Fat (g)</label>
+            <input id="entry-fat" type="number" min="0" step="1" placeholder="15" />
+          </div>
+        </div>
+
+        <label for="entry-notes">Notes</label>
+        <textarea id="entry-notes" rows="3" placeholder="Anything worth remembering about this meal."></textarea>
+
+        <div class="form-actions">
+          <button id="save-entry-button" type="submit">Save meal</button>
+          <button id="clear-form-button" type="button" class="secondary-button">Clear</button>
+        </div>
+      </form>
+
+      <section class="detail-card log-card">
+        <div class="log-card-header">
+          <h2>Recent meals</h2>
+          <div class="pill">Stored locally</div>
+        </div>
+        <div id="nutrition-list" class="workout-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Track your nutrition without losing sight of your training log.</p>
+  </footer>
+
+  <script src="nutrition-tracker.js"></script>
+</body>
+</html>
