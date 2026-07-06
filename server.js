@@ -1,157 +1,218 @@
 const express = require('express');
 const path = require('path');
-const mysql = require('mysql2');
-const session = require('express-session'); // Required for user profile sessions
+const fs = require('fs');
+const nodemailer = require('nodemailer');
+const session = require('express-session');
 const app = express();
 
-// 1. Establish connection to your MySQL database schema
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',                 // Default MySQL user
-    password: 'RP738964$', // IMPORTANT: Replace this with your actual MySQL Workbench password!
-    database: 'c270_fitnesstrackerusers' // Matches your schema name
-});
+const DATA_DIR = path.join(__dirname, 'data');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const WORKOUTS_FILE = path.join(DATA_DIR, 'workouts.json');
+const attachmentPath = path.join(__dirname, 'files', 'welcome-attachment.txt');
 
-// Connect to MySQL
-db.connect((err) => {
-    if (err) {
-        console.error('Error connecting to MySQL Database:', err);
-        return;
-    }
-    console.log('Successfully connected to the MySQL database!');
-});
+function ensureDataFiles() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  if (!fs.existsSync(USERS_FILE)) {
+    fs.writeFileSync(USERS_FILE, JSON.stringify([], null, 2));
+  }
+  if (!fs.existsSync(WORKOUTS_FILE)) {
+    fs.writeFileSync(WORKOUTS_FILE, JSON.stringify([], null, 2));
+  }
+}
 
-// 2. Session Middleware Setup (Helps the server remember who logged in)
+function readJsonFile(filePath, fallback) {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function writeJsonFile(filePath, data) {
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+}
+
+function getUsers() {
+  ensureDataFiles();
+  return readJsonFile(USERS_FILE, []);
+}
+
+function saveUsers(users) {
+  ensureDataFiles();
+  writeJsonFile(USERS_FILE, users);
+}
+
+function getWorkouts() {
+  ensureDataFiles();
+  return readJsonFile(WORKOUTS_FILE, []);
+}
+
+function saveWorkouts(workouts) {
+  ensureDataFiles();
+  writeJsonFile(WORKOUTS_FILE, workouts);
+}
+
+function createEmailTransporter() {
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SECURE } = process.env;
+
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+    console.warn('SMTP is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS to enable email delivery.');
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: Number(SMTP_PORT || 587),
+    secure: SMTP_SECURE === 'true',
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+  });
+}
+
+async function sendLoginEmail(address, name) {
+  if (!fs.existsSync(attachmentPath)) {
+    console.warn(`Attachment file not found at ${attachmentPath}`);
+    return false;
+  }
+
+  const transporter = createEmailTransporter();
+  if (!transporter) {
+    return false;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: address,
+      subject: 'Your fitness tracker file',
+      text: `Hello ${name}, your login was successful. The attached file is included for you.`,
+      attachments: [{
+        filename: 'welcome-attachment.txt',
+        path: attachmentPath,
+      }],
+    });
+
+    console.log(`Email sent successfully to ${address}`);
+    return true;
+  } catch (err) {
+    console.error('Failed to send login email:', err);
+    return false;
+  }
+}
+
 app.use(session({
-    secret: 'fitness_tracker_secret_key', 
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 } // Session cookie lasts for 1 day
+  secret: 'fitness_tracker_secret_key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 24 * 60 * 60 * 1000 },
 }));
 
-// 3. Serves your static HTML/CSS files from this folder
 app.use(express.static(__dirname));
-
-// 4. Allows the server to parse form and JSON data sent from your pages
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// 5. SIGNUP ROUTE (With Duplicate Email Checking)
+app.get('/', (req, res) => {
+  res.redirect('/login.html');
+});
+
+app.get('/download/welcome-attachment', (req, res) => {
+  if (!fs.existsSync(attachmentPath)) {
+    return res.status(404).send('<h1>Attachment file not found.</h1>');
+  }
+
+  return res.download(attachmentPath, 'welcome-attachment.txt');
+});
+
 app.post('/signup', (req, res) => {
-    const { name, email, password } = req.body; 
-    
-    const sqlQuery = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
-    
-    db.query(sqlQuery, [name, email, password], (err, result) => {
-        if (err) {
-            // Check if the error is due to a duplicate entry (MySQL unique error code 1062)
-            if (err.errno === 1062) {
-                console.log(`Signup blocked: Email ${email} already exists.`);
-                return res.send("<h1>An account with this email address already exists.</h1><a href='/login.html'>Go to Log In</a>");
-            }
-            
-            console.error("Database insert error:", err);
-            return res.status(500).send("<h1>Database error occurred during registration.</h1>");
-        }
+  const { name, email, password } = req.body;
+  const users = getUsers();
+  const existingUser = users.find((user) => user.email.toLowerCase() === String(email).toLowerCase());
 
-        console.log("User saved to MySQL successfully!"); 
-        return res.redirect('/login.html');
-    });
+  if (existingUser) {
+    console.log(`Signup blocked: Email ${email} already exists.`);
+    return res.send("<h1>An account with this email address already exists.</h1><a href='/login.html'>Go to Log In</a>");
+  }
+
+  users.push({
+    id: Date.now(),
+    name,
+    email,
+    password,
+  });
+  saveUsers(users);
+
+  console.log(`User saved successfully: ${email}`);
+  return res.redirect('/login.html');
 });
 
-// 6. LOGIN ROUTE (Validates credentials and initializes the session)
-app.post('/login', (req, res) => {
-    const { email, password } = req.body;
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  const users = getUsers();
+  const user = users.find((entry) => entry.email.toLowerCase() === String(email).toLowerCase() && entry.password === password);
 
-    const sqlQuery = "SELECT * FROM users WHERE email = ? AND password = ?";
+  if (user) {
+    req.session.user = {
+      id: user.id,
+      name: user.name,
+    };
+    console.log(`User logged in successfully: ${user.name}`);
+    await sendLoginEmail(email, user.name);
+    return res.redirect('/download/welcome-attachment');
+  }
 
-    db.query(sqlQuery, [email, password], (err, results) => {
-        if (err) {
-            console.error("Database query error:", err);
-            return res.status(500).send("<h1>Database error occurred during login.</h1>");
-        }
-
-        if (results.length > 0) {
-            // Store the user's name and unique ID into the session store!
-            req.session.user = {
-                id: results[0].userId,
-                name: results[0].name
-            };
-            console.log(`User logged in successfully: ${results[0].name}`);
-            return res.redirect('/index.html');
-        } else {
-            return res.send("<h1>Invalid email or password.</h1><a href='/login.html'>Try Again</a>");
-        }
-    });
+  return res.send("<h1>Invalid email or password.</h1><a href='/login.html'>Try Again</a>");
 });
 
-// 7. PROFILE API ROUTE (Frontend HTML files fetch from here to find out who is logged in)
 app.get('/api/current-user', (req, res) => {
-    if (req.session.user) {
-        res.json({ loggedIn: true, name: req.session.user.name });
-    } else {
-        res.json({ loggedIn: false });
-    }
+  if (req.session.user) {
+    res.json({ loggedIn: true, name: req.session.user.name });
+  } else {
+    res.json({ loggedIn: false });
+  }
 });
 
-// 8. WORKOUTS API ROUTE (Returns logged-in user's workouts from MySQL)
 app.get('/api/workouts', (req, res) => {
-    if (!req.session.user) {
-        return res.status(401).json({ workouts: [] });
-    }
+  if (!req.session.user) {
+    return res.status(401).json({ workouts: [] });
+  }
 
-    const userId = req.session.user.id;
-    const sqlQuery = "SELECT workoutId, date, activity, duration, intensity, notes FROM workoutlog WHERE userId = ? ORDER BY date DESC";
+  const userId = req.session.user.id;
+  const workouts = getWorkouts()
+    .filter((entry) => entry.userId === userId)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    db.query(sqlQuery, [userId], (err, results) => {
-        if (err) {
-            console.error("Database workout load error:", err);
-            return res.status(500).json({ workouts: [], message: "Failed to load workouts." });
-        }
-
-        const workouts = results.map((row) => ({
-            id: row.workoutId,
-            date: row.date,
-            name: row.activity,
-            duration: row.duration,
-            intensity: row.intensity,
-            notes: row.notes,
-        }));
-
-        return res.json({ workouts });
-    });
+  return res.json({ workouts });
 });
 
-// 9. LOG WORKOUT ROUTE (Saves workout data linked to the logged-in user)
 app.post('/api/log-workout', (req, res) => {
-    // 1. Make sure a user is actually logged in before saving a workout
-    if (!req.session.user) {
-        return res.status(401).send("<h1>Unauthorized. Please log in first.</h1><a href='/login.html'>Go to Login</a>");
-    }
+  if (!req.session.user) {
+    return res.status(401).json({ success: false, message: 'Unauthorized. Please log in first.' });
+  }
 
-    // 2. Extract the data sent from the frontend form
-    const { date, activity, duration, intensity, notes } = req.body;
-    
-    // Grab the active user's ID from their session token
-    const userId = req.session.user.id; 
+  const { date, activity, duration, intensity, notes } = req.body;
+  const userId = req.session.user.id;
+  const workouts = getWorkouts();
 
-    // 3. Match the columns in your MySQL workbench table perfectly
-    const sqlQuery = "INSERT INTO workoutlog (userId, date, activity, duration, intensity, notes) VALUES (?, ?, ?, ?, ?, ?)";
-    
-    db.query(sqlQuery, [userId, date, activity, duration, intensity, notes || null], (err, result) => {
-        if (err) {
-            console.error("Database workout save error:", err);
-            return res.status(500).json({ success: false, message: "Failed to save workout to the database." });
-        }
-        
-        console.log(`Workout saved successfully for User ID ${userId}!`);
-        // Send a success JSON response back to your frontend script
-        return res.json({ success: true, message: "Workout saved successfully!" });
-    });
+  workouts.push({
+    id: `workout-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+    userId,
+    date,
+    name: activity,
+    duration,
+    intensity,
+    notes: notes || '',
+  });
+
+  saveWorkouts(workouts);
+  console.log(`Workout saved successfully for User ID ${userId}!`);
+  return res.json({ success: true, message: 'Workout saved successfully!' });
 });
 
-// 8. Start the server on Port 3000
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server started! Open http://localhost:${PORT}/signup.html in your browser.`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server started! Open http://localhost:${PORT}/signup.html in your browser.`);
+  console.log(`Other devices can open http://<your-computer-ip>:${PORT}/signup.html`);
 });

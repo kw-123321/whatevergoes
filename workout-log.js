@@ -190,23 +190,14 @@ async function handleSubmit(event) {
 
   if (!workout.name || !workout.date || !Number.isFinite(workout.duration) || workout.duration <= 0) {
     window.alert("Please choose an activity, today's date, and a valid duration.");
-<<<<<<< HEAD
-=======
     return;
   }
+
   if (!ALLOWED_ACTIVITIES.includes(workout.name)) {
     window.alert('Please choose one of the allowed activities.');
     return;
   }
-  if (workout.date !== getTodayString()) {
-    window.alert("Please select today's date for your workout.");
->>>>>>> 319c3beb2de56ac7c6ae98ee66a9f8d2a8857d84
-    return;
-  }
-  if (!ALLOWED_ACTIVITIES.includes(workout.name)) {
-    window.alert('Please choose one of the allowed activities.');
-    return;
-  }
+
   if (workout.date !== getTodayString()) {
     window.alert("Please select today's date for your workout.");
     return;
@@ -232,13 +223,9 @@ async function handleSubmit(event) {
   saveWorkouts();
   resetForm();
   render();
-<<<<<<< HEAD
   showSaveFeedback(savedToServer
-    ? 'Workout saved to MySQL and added to your log.'
-    : 'Workout saved locally. Log in or start the server to persist to MySQL.');
-=======
-  showSaveFeedback('Workout saved and added to your log.');
->>>>>>> 319c3beb2de56ac7c6ae98ee66a9f8d2a8857d84
+    ? 'Workout saved to the shared server and added to your log.'
+    : 'Workout saved locally. Sign in to the server to sync across devices.');
 }
 
 function deleteWorkout(id) {
@@ -255,14 +242,8 @@ function render() {
   renderWorkoutList();
 }
 
-<<<<<<< HEAD
 async function init() {
   await loadWorkouts();
-  elements.form.addEventListener('submit', handleSubmit);
-  elements.saveButton.addEventListener('click', handleSubmit);
-=======
-function init() {
-  loadWorkouts();
   elements.form.addEventListener('submit', (event) => {
     event.preventDefault();
     handleSubmit(event);
@@ -271,7 +252,6 @@ function init() {
     event.preventDefault();
     handleSubmit(event);
   });
->>>>>>> 319c3beb2de56ac7c6ae98ee66a9f8d2a8857d84
   elements.clearButton.addEventListener('click', resetForm);
   setDateConstraints();
   elements.workoutDate.value = getTodayString();
@@ -283,28 +263,24 @@ init();
 // ========================================================
 // SAFE DYNAMIC LOGOUT BUTTON INJECTOR
 // ========================================================
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. Look for the navigation element (checking multiple common classes)
-    const navBar = document.querySelector(".nav-bar") || document.querySelector("nav") || document.querySelector(".site-header");
-    
-    // 2. Only add the button if the nav bar exists AND the button isn't already there
-    if (navBar && !document.querySelector(".logout-btn")) {
-        const logoutLink = document.createElement("a");
-        logoutLink.href = "logout.html";
-        logoutLink.className = "logout-btn";
-        logoutLink.textContent = "Logout";
-        
-        // Apply the exact styles so it renders correctly everywhere
-        logoutLink.style.marginLeft = "15px";
-        logoutLink.style.padding = "6px 12px";
-        logoutLink.style.backgroundColor = "#ff4d4d"; 
-        logoutLink.style.color = "white";
-        logoutLink.style.borderRadius = "4px";
-        logoutLink.style.fontWeight = "bold";
-        logoutLink.style.textDecoration = "none";
-        logoutLink.style.display = "inline-block";
-        
-        // Push it cleanly onto the end of the nav bar
-        navBar.appendChild(logoutLink);
-    }
+document.addEventListener('DOMContentLoaded', () => {
+  const navBar = document.querySelector('.nav-bar') || document.querySelector('nav') || document.querySelector('.site-header');
+
+  if (navBar && !document.querySelector('.logout-btn')) {
+    const logoutLink = document.createElement('a');
+    logoutLink.href = 'logout.html';
+    logoutLink.className = 'logout-btn';
+    logoutLink.textContent = 'Logout';
+
+    logoutLink.style.marginLeft = '15px';
+    logoutLink.style.padding = '6px 12px';
+    logoutLink.style.backgroundColor = '#ff4d4d';
+    logoutLink.style.color = 'white';
+    logoutLink.style.borderRadius = '4px';
+    logoutLink.style.fontWeight = 'bold';
+    logoutLink.style.textDecoration = 'none';
+    logoutLink.style.display = 'inline-block';
+
+    navBar.appendChild(logoutLink);
+  }
 });
