@@ -32,3 +32,4 @@ Then open `http://localhost:8000/index.html`.
 - Entries are stored in browser `localStorage`.
 - Notifications use the browser `Notification` API when permission is granted.
 - Search accepts `YYYY-MM-DD` or `Month Day` formats.
+- After a successful login the app can send an email with an attachment. Configure SMTP with `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and optionally `SMTP_FROM` before starting the server.

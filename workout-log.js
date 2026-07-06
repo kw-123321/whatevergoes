@@ -105,8 +105,8 @@ function populateForm(workout) {
   elements.workoutName.value = workout.name;
   elements.workoutDuration.value = workout.duration;
   if (elements.workoutCalories) {
-      elements.workoutCalories.value = workout.calories || '';
-    }
+    elements.workoutCalories.value = workout.calories || '';
+  }
   elements.workoutIntensity.value = workout.intensity;
   elements.workoutNotes.value = workout.notes || '';
   elements.workoutName.focus();
@@ -181,3 +181,28 @@ async function init() {
 }
 
 init();
+
+// ============================================================
+// SAFE DYNAMIC LOGOUT BUTTON INJECTOR
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  const navBar = document.querySelector('.nav-bar') || document.querySelector('nav');
+
+  if (navBar && !document.querySelector('.logout-btn')) {
+    const logoutLink = document.createElement('a');
+    logoutLink.href = 'logout.html';
+    logoutLink.className = 'logout-btn';
+    logoutLink.textContent = 'Logout';
+
+    logoutLink.style.marginLeft = '15px';
+    logoutLink.style.padding = '6px 12px';
+    logoutLink.style.backgroundColor = '#ff4d4d';
+    logoutLink.style.color = 'white';
+    logoutLink.style.borderRadius = '4px';
+    logoutLink.style.fontWeight = 'bold';
+    logoutLink.style.textDecoration = 'none';
+    logoutLink.style.display = 'inline-block';
+
+    navBar.appendChild(logoutLink);
+  }
+});

@@ -800,3 +800,15 @@ body {
 button {
   cursor: pointer;
 }
+
+/* Clean, un-shakable style for your logout button */
+.logout-btn {
+  background-color: #ff4d4d !important; /* Bright red */
+  color: white !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+  font-weight: bold !important;
+  text-decoration: none !important;
+  margin-left: 15px !important;
+  display: inline-block !important;
+}
