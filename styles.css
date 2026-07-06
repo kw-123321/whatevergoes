@@ -443,6 +443,146 @@ body {
   color: #6b7280;
 }
 
+.note-list-card {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.notes-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.note-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.note-tab {
+  border: 1px solid #d1d5db;
+  background: #f8fafc;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.65rem 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.note-tab.active {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+
+.note-detail-card {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.note-detail-body {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.note-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.note-detail-header h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.note-detail-body {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.note-detail-text {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.note-preview .note-detail-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  position: relative;
+}
+
+.note-preview .note-detail-text::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2.4rem;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0) 0%, rgba(248, 250, 252, 0.95) 100%);
+}
+
+.view-full-note {
+  border: 1px solid #c7d2fe;
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 700;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 0.75rem;
+  width: fit-content;
+}
+
+.note-alarm {
+  color: #4338ca;
+  font-weight: 600;
+}
+
+.note-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.edit-note-button,
+.delete-note-button {
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.45rem 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.edit-note-button {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.delete-note-button {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.notes-empty-state {
+  padding: 1rem;
+  border-radius: 0.9rem;
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px dashed #cbd5e1;
+}
+
 .edit-page {
   max-width: 760px;
   margin: 0 auto;
