@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'fitnessTrackerWorkouts';
+const ALLOWED_ACTIVITIES = ['Gym', 'Cardio', 'Sports', 'Light activity', 'Cycling'];
 
 const state = {
   workouts: [],
@@ -11,11 +12,11 @@ const elements = {
   workoutDate: document.getElementById('workout-date'),
   workoutName: document.getElementById('workout-name'),
   workoutDuration: document.getElementById('workout-duration'),
-  workoutCalories: document.getElementById('workout-calories'),
   workoutIntensity: document.getElementById('workout-intensity'),
   workoutNotes: document.getElementById('workout-notes'),
   saveButton: document.getElementById('save-workout-button'),
   clearButton: document.getElementById('clear-form-button'),
+  saveFeedback: document.getElementById('save-feedback'),
   workoutList: document.getElementById('workout-list'),
   totalWorkouts: document.getElementById('total-workouts'),
   weeklyWorkouts: document.getElementById('weekly-workouts'),
@@ -39,12 +40,28 @@ function createWorkoutId() {
   return `workout-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
+function getTodayString() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function setDateConstraints() {
+  elements.workoutDate.value = getTodayString();
+}
+
 function resetForm() {
   elements.form.reset();
-  elements.workoutDate.value = new Date().toISOString().slice(0, 10);
+  setDateConstraints();
   elements.workoutIntensity.value = 'Moderate';
   state.editingId = null;
   elements.formTitle.textContent = 'Log a workout';
+}
+
+function showSaveFeedback(message) {
+  elements.saveFeedback.textContent = message;
 }
 
 function formatDisplayDate(dateValue) {
@@ -90,7 +107,6 @@ function renderWorkoutList() {
       </div>
       <div class="workout-meta">
         <span>${workout.duration} min</span>
-        <span>${workout.calories ? `${workout.calories} kcal` : 'Calories not set'}</span>
       </div>
       ${workout.notes ? `<p class="workout-notes-preview">${workout.notes}</p>` : ''}
       <div class="note-item-actions">
@@ -108,10 +124,9 @@ function renderWorkoutList() {
 function populateForm(workout) {
   state.editingId = workout.id;
   elements.formTitle.textContent = 'Edit workout';
-  elements.workoutDate.value = workout.date;
-  elements.workoutName.value = workout.name;
+  setDateConstraints();
+  elements.workoutName.value = ALLOWED_ACTIVITIES.includes(workout.name) ? workout.name : '';
   elements.workoutDuration.value = workout.duration;
-  elements.workoutCalories.value = workout.calories || '';
   elements.workoutIntensity.value = workout.intensity;
   elements.workoutNotes.value = workout.notes || '';
   elements.workoutName.focus();
@@ -125,13 +140,20 @@ function handleSubmit(event) {
     date: elements.workoutDate.value,
     name: elements.workoutName.value.trim(),
     duration: Number(elements.workoutDuration.value),
-    calories: Number(elements.workoutCalories.value) || 0,
     intensity: elements.workoutIntensity.value,
     notes: elements.workoutNotes.value.trim(),
   };
 
   if (!workout.name || !workout.date || !Number.isFinite(workout.duration) || workout.duration <= 0) {
-    window.alert('Please enter a workout name, date, and duration.');
+    window.alert("Please choose an activity, today's date, and a valid duration.");
+    return;
+  }
+  if (!ALLOWED_ACTIVITIES.includes(workout.name)) {
+    window.alert('Please choose one of the allowed activities.');
+    return;
+  }
+  if (workout.date !== getTodayString()) {
+    window.alert("Please select today's date for your workout.");
     return;
   }
 
@@ -144,6 +166,7 @@ function handleSubmit(event) {
   saveWorkouts();
   resetForm();
   render();
+  showSaveFeedback('Workout saved and added to your log.');
 }
 
 function deleteWorkout(id) {
@@ -162,9 +185,17 @@ function render() {
 
 function init() {
   loadWorkouts();
-  elements.form.addEventListener('submit', handleSubmit);
+  elements.form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    handleSubmit(event);
+  });
+  elements.saveButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    handleSubmit(event);
+  });
   elements.clearButton.addEventListener('click', resetForm);
-  elements.workoutDate.value = new Date().toISOString().slice(0, 10);
+  setDateConstraints();
+  elements.workoutDate.value = getTodayString();
   render();
 }
 

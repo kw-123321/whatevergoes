@@ -189,6 +189,18 @@ body {
   min-height: 100%;
 }
 
+.form-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.helper-text {
+  margin: -0.15rem 0 0.2rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
 .field-row {
   display: grid;
   gap: 1rem;
@@ -200,6 +212,14 @@ body {
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 0.5rem;
+}
+
+.save-feedback {
+  min-height: 1.25rem;
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  color: #166534;
+  font-weight: 600;
 }
 
 .log-card-header {
@@ -354,6 +374,15 @@ body {
   border-radius: 0.85rem;
   padding: 0.95rem 1rem;
   font: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.detail-card input:focus,
+.detail-card textarea:focus,
+.detail-card select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
 }
 
 .time-picker-field {
