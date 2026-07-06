@@ -3,6 +3,8 @@ const monthNames = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
+const API_URL = 'http://localhost:5000/api/goals';
+
 const state = {
   currentMonth: new Date(),
   selectedDate: new Date(),
@@ -32,46 +34,28 @@ const elements = {
   searchDay: document.getElementById('search-day'),
 };
 
-function normalizeNotes(rawNotes) {
-  const notes = {};
-  if (!rawNotes || typeof rawNotes !== 'object') return notes;
-  Object.entries(rawNotes).forEach(([key, value]) => {
-    if (Array.isArray(value)) {
-      notes[key] = value;
-    } else if (typeof value === 'string' && value.trim()) {
-      notes[key] = [{
-        id: nextNoteId(),
-        title: value.trim().slice(0, 40),
-        text: value,
-        time: '',
-        offset: '60',
-        offsetText: '',
-      }];
-    } else if (value && typeof value === 'object' && typeof value.text === 'string') {
-      notes[key] = [{
-        id: nextNoteId(),
-        title: value.title || '',
-        text: value.text,
-        time: value.time || '',
-        offset: value.offset || '60',
-        offsetText: value.offsetText || (value.time ? getOffsetText(value.offset || '60') : ''),
-      }];
-    }
-  });
-  return notes;
-}
-
-function loadState() {
-  const savedNotes = localStorage.getItem('fitnessTrackerNotes');
+async function loadState() {
   try {
-    state.notes = normalizeNotes(savedNotes ? JSON.parse(savedNotes) : {});
+    const response = await fetch(API_URL);
+    const allNotes = await response.json();
+    state.notes = {};
+    allNotes.forEach((note) => {
+      const key = note.dateKey;
+      if (!key) return;
+      if (!state.notes[key]) state.notes[key] = [];
+      state.notes[key].push({
+        id: note.id,
+        title: note.title,
+        text: note.text,
+        time: note.time,
+        offset: note.offset,
+        offsetText: note.offsetText,
+      });
+    });
   } catch (error) {
+    console.error('Failed to load goals from backend:', error);
     state.notes = {};
   }
-}
-
-function saveState() {
-  localStorage.setItem('fitnessTrackerNotes', JSON.stringify(state.notes));
 }
 
 function formatDateKey(date) {
@@ -319,7 +303,7 @@ function populateNoteForm(note) {
   document.getElementById('note-form-title').textContent = 'Edit note';
 }
 
-function saveNote() {
+async function saveNote() {
   const noteText = elements.newNoteText.value.trim();
   if (!noteText) {
     window.alert('Please enter a note before saving.');
@@ -328,51 +312,66 @@ function saveNote() {
 
   const noteTitle = elements.newNoteTitle.value.trim() || (noteText.length > 32 ? `${noteText.slice(0, 32)}...` : noteText);
   const key = getSelectedDateKey();
-  const notes = getCurrentNotes();
   const time = elements.newNoteTime.value;
   const offset = elements.newNoteOffset.value;
   const offsetText = time ? getOffsetText(offset) : '';
 
-  if (state.editingNoteId) {
-    const existing = notes.find((note) => note.id === state.editingNoteId);
-    if (existing) {
-      existing.title = noteTitle;
-      existing.text = noteText;
-      existing.time = time;
-      existing.offset = offset;
-      existing.offsetText = offsetText;
+  try {
+    if (state.editingNoteId) {
+      const updatedNote = {
+        dateKey: key,
+        id: state.editingNoteId,
+        title: noteTitle,
+        text: noteText,
+        time,
+        offset,
+        offsetText,
+      };
+      await fetch(`${API_URL}/${state.editingNoteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedNote),
+      });
+      state.selectedNoteId = state.editingNoteId;
+    } else {
+      const newNote = {
+        dateKey: key,
+        id: nextNoteId(),
+        title: noteTitle,
+        text: noteText,
+        time,
+        offset,
+        offsetText,
+      };
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newNote),
+      });
+      state.selectedNoteId = newNote.id;
     }
-  } else {
-    notes.push({
-      id: nextNoteId(),
-      title: noteTitle,
-      text: noteText,
-      time,
-      offset,
-      offsetText,
-    });
-  }
 
-  state.notes[key] = notes;
-  state.selectedNoteId = state.editingNoteId || notes[notes.length - 1].id;
-  saveState();
-  resetNoteForm();
-  renderAll();
+    await loadState();
+    resetNoteForm();
+    renderAll();
+  } catch (error) {
+    window.alert('Could not save note. Check that the backend server is running.');
+    console.error(error);
+  }
 }
 
-function deleteNote(noteId) {
-  const key = getSelectedDateKey();
-  const notes = getCurrentNotes().filter((note) => note.id !== noteId);
-  if (notes.length > 0) {
-    state.notes[key] = notes;
-    state.selectedNoteId = notes[0].id;
-  } else {
-    delete state.notes[key];
-    state.selectedNoteId = null;
+async function deleteNote(noteId) {
+  try {
+    await fetch(`${API_URL}/${noteId}`, { method: 'DELETE' });
+    await loadState();
+    const notes = getCurrentNotes();
+    state.selectedNoteId = notes.length > 0 ? notes[0].id : null;
+    resetNoteForm();
+    renderAll();
+  } catch (error) {
+    window.alert('Could not delete note. Check that the backend server is running.');
+    console.error(error);
   }
-  saveState();
-  resetNoteForm();
-  renderAll();
 }
 
 function getOffsetText(offset) {
@@ -521,8 +520,8 @@ function renderAll() {
   renderReminders();
 }
 
-function initialize() {
-  loadState();
+async function initialize() {
+  await loadState();
   setCurrentMonth(state.selectedDate);
   resetNoteForm();
   renderAll();

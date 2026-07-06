@@ -48,7 +48,7 @@
         <h2 id="form-title">Log a meal</h2>
 
         <label for="entry-date">Date</label>
-        <input id="entry-date" type="date" required />
+        <input id="entry-date" type="date" />
 
         <label for="entry-meal-type">Meal type</label>
         <select id="entry-meal-type">
@@ -59,12 +59,12 @@
         </select>
 
         <label for="entry-food">Food / meal name</label>
-        <input id="entry-food" type="text" placeholder="e.g. Grilled chicken rice bowl" required />
+        <input id="entry-food" type="text" placeholder="e.g. Grilled chicken rice bowl" />
 
         <div class="field-row">
           <div>
             <label for="entry-calories">Calories</label>
-            <input id="entry-calories" type="number" min="0" step="1" placeholder="450" required />
+            <input id="entry-calories" type="number" min="0" step="1" placeholder="450" />
           </div>
           <div>
             <label for="entry-protein">Protein (g)</label>
@@ -87,7 +87,7 @@
         <textarea id="entry-notes" rows="3" placeholder="Anything worth remembering about this meal."></textarea>
 
         <div class="form-actions">
-          <button id="save-entry-button" type="submit">Save meal</button>
+          <button id="save-entry-button" type="submit" class="button">Save meal</button>
           <button id="clear-form-button" type="button" class="secondary-button">Clear</button>
         </div>
       </form>
