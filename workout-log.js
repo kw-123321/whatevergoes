@@ -169,3 +169,32 @@ function init() {
 }
 
 init();
+
+// ========================================================
+// SAFE DYNAMIC LOGOUT BUTTON INJECTOR
+// ========================================================
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Look for the navigation element (checking multiple common classes)
+    const navBar = document.querySelector(".nav-bar") || document.querySelector("nav") || document.querySelector(".site-header");
+    
+    // 2. Only add the button if the nav bar exists AND the button isn't already there
+    if (navBar && !document.querySelector(".logout-btn")) {
+        const logoutLink = document.createElement("a");
+        logoutLink.href = "logout.html";
+        logoutLink.className = "logout-btn";
+        logoutLink.textContent = "Logout";
+        
+        // Apply the exact styles so it renders correctly everywhere
+        logoutLink.style.marginLeft = "15px";
+        logoutLink.style.padding = "6px 12px";
+        logoutLink.style.backgroundColor = "#ff4d4d"; 
+        logoutLink.style.color = "white";
+        logoutLink.style.borderRadius = "4px";
+        logoutLink.style.fontWeight = "bold";
+        logoutLink.style.textDecoration = "none";
+        logoutLink.style.display = "inline-block";
+        
+        // Push it cleanly onto the end of the nav bar
+        navBar.appendChild(logoutLink);
+    }
+});

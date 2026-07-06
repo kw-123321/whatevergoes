@@ -97,5 +97,18 @@
   </main>
 
   <script src="app.js"></script>
+  
+  <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const navBar = document.querySelector(".nav-bar");
+            if (navBar && !document.querySelector(".logout-btn")) {
+                const logoutLink = document.createElement("a");
+                logoutLink.href = "logout.html";
+                logoutLink.className = "logout-btn";
+                logoutLink.textContent = "Logout";
+                navBar.appendChild(logoutLink);
+            }
+        });
+    </script>
 </body>
 </html>
