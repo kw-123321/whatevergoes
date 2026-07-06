@@ -5,11 +5,19 @@ const session = require('express-session'); // Required for user profile session
 const app = express();
 
 // 1. Establish connection to your MySQL database schema
+// Use environment variables so collaborators can connect to a shared remote database.
+const dbHost = process.env.DB_HOST || 'localhost';
+const dbPort = process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306;
+const dbUser = process.env.DB_USER || 'root';
+const dbPassword = process.env.DB_PASSWORD || 'RP738964$';
+const dbName = process.env.DB_NAME || 'c270_fitnesstrackerusers';
+
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',                 // Default MySQL user
-    password: 'RP738964$', // IMPORTANT: Replace this with your actual MySQL Workbench password!
-    database: 'c270_fitnesstrackerusers' // Matches your schema name
+    host: dbHost,
+    port: dbPort,
+    user: dbUser,
+    password: dbPassword,
+    database: dbName,
 });
 
 // Connect to MySQL
@@ -18,7 +26,7 @@ db.connect((err) => {
         console.error('Error connecting to MySQL Database:', err);
         return;
     }
-    console.log('Successfully connected to the MySQL database!');
+    console.log(`Successfully connected to MySQL at ${dbHost}:${dbPort} using database ${dbName}`);
 });
 
 // 2. Session Middleware Setup (Helps the server remember who logged in)
