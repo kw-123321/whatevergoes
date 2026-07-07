@@ -43,5 +43,13 @@
   <footer class="site-footer">
     <p>Fitness Tracker signup page.</p>
   </footer>
+  <script>
+    document.querySelector(".auth-form").addEventListener("submit", (event) => {
+      if (window.location.protocol === "file:") {
+        event.preventDefault();
+        alert("Please run the app with npm start, then open http://localhost:3000/signup.html");
+      }
+    });
+  </script>
 </body>
 </html>

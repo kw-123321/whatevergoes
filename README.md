@@ -1,35 +1,35 @@
 # Fitness Tracker App
 
-This is a simple browser-based fitness tracker prototype with a homepage and a goal tracker page.
+This is a simple fitness tracker app with signup, login, goal tracking, workout logging, and nutrition tracking.
 
 ## Files
-- `index.html` - Homepage with navbar to the Goal Tracker.
+- `index.html` - Homepage with navbar to the app pages.
+- `signup.html` - Signup form.
+- `login.html` - Login form.
+- `server.js` - Express server for signup, login, sessions, and API routes.
 - `goal-tracker.html` - Schedule and day detail tracker.
 - `styles.css` - Layout and styling.
 - `app.js` - Client-side app logic for schedule rendering, notes, and alarms.
 
 ## How to Open
-### Option 1: Open in browser
-1. Open `d:\RP\C270 DevOps Essential\week 8\gitstuff\index.html` in your browser.
-2. Click `Goal Tracker` to use the app.
+Do not double-click `signup.html` or `login.html` for signup/login. Those forms submit to Express routes such as `/signup` and `/login`, so the Node server must be running.
 
-### Option 2: Run a local web server
-From the `gitstuff` folder run one of these commands:
+From the project folder, run:
 
-- Python 3:
-  ```powershell
-  python -m http.server 8000
-  ```
+```powershell
+npm install
+npm start
+```
 
-- Node.js (`http-server` installed):
-  ```powershell
-  npx http-server -p 8000
-  ```
+Then open:
 
-Then open `http://localhost:8000/index.html`.
+```text
+http://localhost:3000/signup.html
+```
 
 ## Notes
 - Entries are stored in browser `localStorage`.
 - Notifications use the browser `Notification` API when permission is granted.
 - Search accepts `YYYY-MM-DD` or `Month Day` formats.
 - After a successful login the app can send an email with an attachment. Configure SMTP with `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and optionally `SMTP_FROM` before starting the server.
+- Signup and login require the MySQL database configured in `server.js` or through `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME` environment variables.
