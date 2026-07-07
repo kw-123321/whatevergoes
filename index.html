@@ -65,11 +65,18 @@
       const navBar = document.querySelector(".nav-bar");
       if (navBar && !document.querySelector(".logout-btn")) {
         const logoutLink = document.createElement("a");
-        logoutLink.href = "logout.html";
+        logoutLink.href = "/logout";
         logoutLink.className = "logout-btn";
         logoutLink.textContent = "Logout";
         navBar.appendChild(logoutLink);
       }
+      fetch("/api/current-user")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.loggedIn) {
+            document.getElementById("user-profile-display").textContent = data.name;
+          }
+        });
     });
   </script>
 </body>

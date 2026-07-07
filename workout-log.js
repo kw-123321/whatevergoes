@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api/workouts';
+const API_URL = '/api/workouts';
 
 const state = {
   workouts: [],
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (navBar && !document.querySelector('.logout-btn')) {
     const logoutLink = document.createElement('a');
-    logoutLink.href = 'logout.html';
+    logoutLink.href = '/logout';
     logoutLink.className = 'logout-btn';
     logoutLink.textContent = 'Logout';
 

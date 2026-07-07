@@ -10,6 +10,7 @@
   <header class="site-header">
     <div class="brand">Fitness Tracker</div>
     <nav class="nav-bar">
+      <div id="user-profile-display" style="font-weight: bold; font-size: 1rem; padding: 0 15px; color: #4f46e5;"></div>
       <a href="index.html">Home</a>
       <a href="goal-tracker.html">Goal Tracker</a>
       <a href="workout-log.html">Workout Log</a>
@@ -106,6 +107,25 @@
     <p>Track your nutrition without losing sight of your training log.</p>
   </footer>
 
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const navBar = document.querySelector(".nav-bar");
+      if (navBar && !document.querySelector(".logout-btn")) {
+        const logoutLink = document.createElement("a");
+        logoutLink.href = "/logout";
+        logoutLink.className = "logout-btn";
+        logoutLink.textContent = "Logout";
+        navBar.appendChild(logoutLink);
+      }
+      fetch("/api/current-user")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.loggedIn) {
+            document.getElementById("user-profile-display").textContent = data.name;
+          }
+        });
+    });
+  </script>
   <script src="nutrition-tracker.js"></script>
 </body>
 </html>

@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "_id": "workout-1783437133208-910",
+    "userId": 1783436409257,
+    "date": "2026-07-07",
+    "name": "Cardio",
+    "duration": 4,
+    "calories": 0,
+    "intensity": "Moderate",
+    "notes": "nil"
+  },
+  {
+    "_id": "workout-1783437620910-385",
+    "userId": 1783437620892,
+    "date": "2026-07-07",
+    "name": "Gym",
+    "duration": 45,
+    "calories": 300,
+    "intensity": "Moderate",
+    "notes": "Good"
+  }
+]

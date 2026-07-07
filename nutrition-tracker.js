@@ -1,4 +1,4 @@
-const API_URL = 'https://nutrition-backend-8qo3.onrender.com/api/entries';
+const API_URL = '/api/entries';
 
 const state = {
   entries: [],

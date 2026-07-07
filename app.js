@@ -3,7 +3,7 @@ const monthNames = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-const API_URL = 'http://localhost:5000/api/goals';
+const API_URL = '/api/goals';
 
 const state = {
   currentMonth: new Date(),
