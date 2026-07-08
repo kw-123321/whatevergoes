@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitness Tracker - Goal Setting</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">Fitness Tracker</div>
+    <nav class="nav-bar">
+      <div id="user-profile-display" style="font-weight: bold; font-size: 1rem; padding: 0 15px; color: #4f46e5;"></div>
+      <a href="index.html">Home</a>
+      <a href="goal-tracker.html" class="active">Goal Setting</a>
+      <a href="workout-log.html">Workout Log</a>
+      <a href="nutrition-tracker.html">Nutrition Tracker</a>
+    </nav>
+  </header>
+
+  <main class="tracker-page">
+    <section class="schedule-panel">
+      <div class="schedule-header">
+        <div>
+          <div class="summary-pill">Year: <span id="current-year"></span></div>
+          <div class="summary-pill">Month: <span id="current-month-name"></span></div>
+        </div>
+        <div class="search-group">
+          <label for="search-day">Search a day</label>
+          <div class="search-row">
+            <input id="search-day" placeholder="e.g. 2026-06-29 or June 29" />
+            <button id="search-button" type="button">Search</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="month-calendar">
+        <div class="calendar-header">
+          <button id="prev-month" type="button">← Prev</button>
+          <button id="calendar-title-button" type="button" class="calendar-title-button">
+            <span id="calendar-title"></span>
+          </button>
+          <button id="next-month" type="button">Next →</button>
+        </div>
+        <div class="month-picker hidden" id="month-picker"></div>
+        <div class="calendar-grid-labels">
+          <div>Sun</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
+        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+      </div>
+
+    </section>
+
+    <aside class="detail-panel">
+      <div class="detail-card selected-day-card">
+        <h2>Selected day</h2>
+        <p class="selected-day" id="selected-day-label"></p>
+        <p class="selected-summary" id="selected-summary"></p>
+
+        <section class="note-list-card">
+          <h3>Notes for this day</h3>
+          <div id="notes-list" class="notes-list"></div>
+        </section>
+
+        <section class="note-form-card">
+          <h3 id="note-form-title">Add a new note</h3>
+          <label for="new-note-title">Note title</label>
+          <input id="new-note-title" placeholder="e.g. Morning workout" />
+
+          <label for="new-note-text">Note</label>
+          <textarea id="new-note-text" rows="4" placeholder="Type your workout plan, recovery note, or reminder."></textarea>
+
+          <label for="new-note-time">Reminder time</label>
+          <div class="time-picker-field">
+            <input id="new-note-time" type="time" aria-label="Choose a reminder time" />
+          </div>
+          <p class="form-hint">Pick a time that feels easy to remember.</p>
+
+          <label for="new-note-offset">Reminder ahead</label>
+          <select id="new-note-offset">
+            <option value="15">15 minutes before</option>
+            <option value="30">30 minutes before</option>
+            <option value="60" selected>1 hour before</option>
+            <option value="1440">1 day before</option>
+          </select>
+
+          <div class="note-form-actions">
+            <button id="save-note-button" type="button">Save note</button>
+            <button id="cancel-note-button" type="button" class="secondary-button">Cancel</button>
+          </div>
+        </section>
+      </div>
+
+      <div class="notice-card">
+        <h3>Upcoming reminders</h3>
+        <ul id="reminders-list"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+  
+  <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const navBar = document.querySelector(".nav-bar");
+            if (navBar && !document.querySelector(".logout-btn")) {
+                const logoutLink = document.createElement("a");
+                logoutLink.href = "/logout";
+                logoutLink.className = "logout-btn";
+                logoutLink.textContent = "Logout";
+                navBar.appendChild(logoutLink);
+            }
+            fetch("/api/current-user")
+                .then((r) => r.json())
+                .then((data) => {
+                    if (data.loggedIn) {
+                        document.getElementById("user-profile-display").textContent = data.name;
+                    }
+                });
+        });
+    </script>
+</body>
+</html>

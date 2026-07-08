@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitness Tracker - Workout Log</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">Fitness Tracker</div>
+    <nav class="nav-bar">
+      <div id="user-profile-display" style="font-weight: bold; font-size: 1rem; padding: 0 15px; color: #4f46e5;"></div>
+      <a href="index.html">Home</a>
+      <a href="goal-tracker.html">Goal Tracker</a>
+      <a href="workout-log.html" class="active">Workout Log</a>
+      <a href="nutrition-tracker.html">Nutrition Tracker</a>
+    </nav>
+  </header>
+
+  <main class="workout-page">
+    <section class="workout-hero">
+      <div>
+        <div class="summary-pill">Workout logging</div>
+        <h1>Track every rep, run, and recovery session.</h1>
+        <p>
+          Keep your training history in a polished log that stays separate from your planner and goal timeline.
+        </p>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span class="stat-label">Total workouts</span>
+          <strong id="total-workouts">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">This week</span>
+          <strong id="weekly-workouts">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Last logged</span>
+          <strong id="last-workout">—</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="workout-grid">
+      <form class="detail-card form-card" id="workout-form">
+        <h2 id="form-title">Log a workout</h2>
+
+        <label for="workout-date">Date</label>
+        <input id="workout-date" type="text" readonly />
+        <p class="helper-text">Today’s date is automatically used for every workout log.</p>
+
+        <label for="workout-name">Activity</label>
+        <select id="workout-name">
+          <option value="" selected disabled>Select an activity</option>
+          <option value="Gym">Gym</option>
+          <option value="Cardio">Cardio</option>
+          <option value="Sports">Sports</option>
+          <option value="Light activity">Light activity</option>
+          <option value="Cycling">Cycling</option>
+        </select>
+
+        <div class="field-row">
+          <div>
+            <label for="workout-duration">Duration (min)</label>
+            <input id="workout-duration" type="number" min="1" step="1" placeholder="45" />
+          </div>
+        </div>
+
+        <label for="workout-intensity">Intensity</label>
+        <select id="workout-intensity">
+          <option value="Low">Low</option>
+          <option value="Moderate" selected>Moderate</option>
+          <option value="High">High</option>
+        </select>
+
+        <label for="workout-notes">Notes</label>
+        <textarea id="workout-notes" rows="4" placeholder="Share how it felt, what you focused on, or how you recovered."></textarea>
+
+        <div id="save-feedback" class="save-feedback" aria-live="polite"></div>
+
+        <div class="form-actions">
+          <button id="save-workout-button" class="button" type="submit">Save workout</button>
+          <button id="clear-form-button" type="button" class="secondary-button">Clear</button>
+        </div>
+      </form>
+
+      <section class="detail-card log-card">
+        <div class="log-card-header">
+          <h2>Recent workouts</h2>
+          <div class="pill">Stored locally</div>
+        </div>
+        <div id="workout-list" class="workout-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Keep your training history close by without crowding your planner.</p>
+  </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      fetch("/api/current-user")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.loggedIn) {
+            document.getElementById("user-profile-display").textContent = data.name;
+          }
+        });
+    });
+  </script>
+  <script src="workout-log.js?v=20260706"></script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitness Tracker - Home</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="brand">Fitness Tracker</div>
+    <nav class="nav-bar" style="display: flex; align-items: center;">
+      <div id="user-profile-display" style="font-weight: bold; font-size: 1rem; padding: 0 15px; color: #4f46e5;"></div>
+      <a href="index.html" class="active">Home</a>
+      <a href="goal-tracker.html">Goal Setting</a>
+      <a href="workout-log.html">Workout Log</a>
+      <a href="nutrition-tracker.html">Nutrition Tracker</a>
+
+    </nav>
+  </header>
+
+  <main class="home-page">
+    <section class="hero">
+      <h1>Organize your fitness year, month, week, and day</h1>
+      <p>
+        Track your goals in a timetable-style schedule, search any day, save notes, and set alarms for important
+        workouts and milestones.
+      </p>
+      <a class="button" href="goal-tracker.html">Open Goal Setting</a>
+      <a class="button secondary-button" href="workout-log.html">Open Workout Log</a>
+      <a class="button secondary-button" href="nutrition-tracker.html">Open Nutrition Tracker</a>
+    </section>
+
+    <section class="how-it-works">
+      <h2>Track every schedule level</h2>
+      <div class="feature-grid">
+        <article>
+          <h3>Year overview</h3>
+          <p>See your schedule across all 12 months and jump quickly between them.</p>
+        </article>
+        <article>
+          <h3>Monthly calendar</h3>
+          <p>Use a calendar grid to plan workouts, rest days, and milestones month by month.</p>
+        </article>
+        <article>
+          <h3>Daily notes & alarms</h3>
+          <p>Add notes to any day and set alarms so you never miss an important session.</p>
+        </article>
+        <article>
+          <h3>Workout log</h3>
+          <p>Record finished sessions in a dedicated log with date, duration, and recovery notes.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Created in gitstuff for the Fitness Tracker goal tracker page.</p>
+  </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const navBar = document.querySelector(".nav-bar");
+      if (navBar && !document.querySelector(".logout-btn")) {
+        const logoutLink = document.createElement("a");
+        logoutLink.href = "/logout";
+        logoutLink.className = "logout-btn";
+        logoutLink.textContent = "Logout";
+        navBar.appendChild(logoutLink);
+      }
+      fetch("/api/current-user")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.loggedIn) {
+            document.getElementById("user-profile-display").textContent = data.name;
+          }
+        });
+    });
+  </script>
+</body>
+
+</html>
