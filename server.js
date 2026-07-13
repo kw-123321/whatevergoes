@@ -107,7 +107,33 @@ app.post('/signup', async (req, res) => {
     const existing = await query('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [email]);
     if (existing.length > 0) {
       console.log(`Signup blocked: Email ${email} already exists.`);
-      return res.send("<h1>An account with this email address already exists.</h1><a href='/login.html'>Go to Log In</a>");
+      return res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitness Tracker - Signup Error</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">Fitness Tracker</div>
+    <nav class="nav-bar"></nav>
+  </header>
+
+  <main class="auth-page">
+    <section class="auth-card">
+      <h1>Account Already Exists</h1>
+      <p>An account with this email address already exists.</p>
+      <a class="button" href="/login.html">Go to Log In</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Fitness Tracker signup error page.</p>
+  </footer>
+</body>
+</html>`);
     }
 
     const result = await query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, password]);

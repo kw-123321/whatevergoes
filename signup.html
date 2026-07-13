@@ -22,7 +22,8 @@
         <input type="text" id="name" name="name" placeholder="Jane Doe" required />
 
         <label for="email">Email address</label>
-        <input type="email" id="email" name="email" placeholder="you@example.com" required />
+        <input type="email" id="email" name="email" placeholder="you@example.com" required novalidate />
+        <p id="email-error" style="display:none; color: #ef4444; font-size:0.9rem; margin-top:0.25rem;">Please enter a valid email address (e.g., name@gmail.com).</p>
 
         <label for="password">Password</label>
         <div style="position:relative; display:flex; align-items:center;">
@@ -32,6 +33,17 @@
           </button>
         </div>
         <p id="caps-warning" style="display:none; color: #f97316; font-size:0.9rem; margin-top:0.25rem;">⚠️ Caps Lock is on!</p>
+
+        <label for="confirm-password">Confirm Password</label>
+        <div style="position:relative; display:flex; align-items:center;">
+          <input type="password" id="confirm-password" name="confirmPassword" placeholder="Confirm Password" required minlength="8" style="width:100%; padding-right:2.6rem;" />
+          <button type="button" id="toggle-confirm-password" aria-label="Show password" title="Show password" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:transparent; border:none; cursor:pointer; padding:0; margin:0; display:inline-flex; align-items:center; justify-content:center; color:#6b7280;">
+            <svg id="eye-icon-confirm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+        </div>
+
+        <p id="confirm-error" style="display:none; color: #ef4444; font-size:0.9rem; margin-top:0.25rem;">Passwords do not match.</p>
+
         <button type="submit" class="button">Create account</button>
       </form>
 
@@ -46,6 +58,46 @@
   </footer>
   <script>
     document.querySelector(".auth-form").addEventListener("submit", (event) => {
+      const form = event.currentTarget;
+      const email = form.querySelector('#email');
+      const pwd = form.querySelector('#password');
+      const cpwd = form.querySelector('#confirm-password');
+      const emailError = document.getElementById('email-error');
+
+      // validate email: check format and @gmail.com domain
+      if (email && email.value) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const isValidFormat = emailRegex.test(email.value);
+        const isGmailDomain = email.value.endsWith('@gmail.com');
+
+        if (!isValidFormat || !isGmailDomain) {
+          event.preventDefault();
+          if (emailError) {
+            emailError.textContent = 'Please enter a valid email address (e.g., name@gmail.com)';
+            emailError.style.display = 'block';
+          }
+          email.focus();
+          return;
+        }
+      } else if (!email.value) {
+        event.preventDefault();
+        if (emailError) {
+          emailError.textContent = 'Please enter a valid email address (e.g., name@gmail.com)';
+          emailError.style.display = 'block';
+        }
+        email.focus();
+        return;
+      }
+
+      // if confirm-password exists, ensure they match
+      if (pwd && cpwd && pwd.value !== cpwd.value) {
+        event.preventDefault();
+        const err = document.getElementById('confirm-error');
+        if (err) err.style.display = 'block';
+        cpwd.focus();
+        return;
+      }
+
       if (window.location.protocol === "file:") {
         event.preventDefault();
         alert("Please run the app with npm start, then open http://localhost:3000/signup.html");
@@ -101,6 +153,50 @@
 
       // ensure button shows correct initial icon
       updateUI();
+    })();
+  </script>
+  <script>
+    (function() {
+      const cpwd = document.getElementById('confirm-password');
+      const toggleConfirm = document.getElementById('toggle-confirm-password');
+      if (cpwd && toggleConfirm) {
+        const eyeSvg = {
+          show: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>',
+          hide: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.86 21.86 0 0 1 5.12-5.94"></path><path d="M1 1l22 22"></path></svg>'
+        };
+
+        let visible = false;
+        function updateUI() {
+          toggleConfirm.setAttribute('aria-pressed', String(visible));
+          toggleConfirm.title = visible ? 'Hide password' : 'Show password';
+          toggleConfirm.innerHTML = visible ? eyeSvg.hide : eyeSvg.show;
+          cpwd.type = visible ? 'text' : 'password';
+        }
+
+        toggleConfirm.addEventListener('click', () => {
+          visible = !visible;
+          updateUI();
+        });
+
+        updateUI();
+      }
+
+      // hide mismatch error when user types
+      const pwd = document.getElementById('password');
+      const err = document.getElementById('confirm-error');
+      if (err) {
+        if (cpwd) cpwd.addEventListener('input', () => { err.style.display = 'none'; });
+        if (pwd) pwd.addEventListener('input', () => { err.style.display = 'none'; });
+      }
+    })();
+
+    // hide email error when user types
+    (function() {
+      const email = document.getElementById('email');
+      const emailError = document.getElementById('email-error');
+      if (email && emailError) {
+        email.addEventListener('input', () => { emailError.style.display = 'none'; });
+      }
     })();
   </script>
 </body>
