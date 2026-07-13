@@ -72,8 +72,6 @@ async function sendLoginEmail(address, name) {
   }
 }
 
-app.use(express.static(__dirname));
-
 app.use(session({
   secret: 'fitness_tracker_secret_key',
   resave: false,
@@ -83,6 +81,7 @@ app.use(session({
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
   res.redirect('/login.html');
@@ -179,6 +178,7 @@ app.post('/api/workouts', async (req, res) => {
   const _id = `workout-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
   try {
+    console.log('POST /api/workouts payload:', req.body);
     await query(
       'INSERT INTO workouts (_id, userId, date, name, duration, calories, intensity, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [_id, userId, date, name, Number(duration), Number(calories) || 0, intensity, notes || '']
@@ -200,6 +200,7 @@ app.put('/api/workouts/:id', async (req, res) => {
   const userId = req.session.user.id;
 
   try {
+    console.log(`PUT /api/workouts/${req.params.id} payload:`, req.body);
     const result = await query(
       'UPDATE workouts SET date = ?, name = ?, duration = ?, calories = ?, intensity = ?, notes = ? WHERE _id = ? AND userId = ?',
       [date, name, Number(duration), Number(calories) || 0, intensity, notes || '', req.params.id, userId]
@@ -338,6 +339,7 @@ app.post('/api/entries', async (req, res) => {
   const _id = `entry-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
   try {
+    console.log('POST /api/entries payload:', req.body);
     await query(
       'INSERT INTO nutrition_entries (_id, userId, date, mealType, food, calories, protein, carbs, fat, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [_id, req.session.user.id, date, mealType, food, Number(calories) || 0, Number(protein) || 0, Number(carbs) || 0, Number(fat) || 0, notes || '']
@@ -355,6 +357,7 @@ app.put('/api/entries/:id', async (req, res) => {
   const { date, mealType, food, calories, protein, carbs, fat, notes } = req.body;
 
   try {
+    console.log(`PUT /api/entries/${req.params.id} payload:`, req.body);
     const result = await query(
       'UPDATE nutrition_entries SET date = ?, mealType = ?, food = ?, calories = ?, protein = ?, carbs = ?, fat = ?, notes = ? WHERE _id = ? AND userId = ?',
       [date, mealType, food, Number(calories) || 0, Number(protein) || 0, Number(carbs) || 0, Number(fat) || 0, notes || '', req.params.id, req.session.user.id]

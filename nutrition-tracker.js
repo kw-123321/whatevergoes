@@ -103,7 +103,20 @@ function renderEntryList() {
 function populateForm(entry) {
   state.editingId = entry._id;
   elements.formTitle.textContent = 'Edit meal';
-  elements.entryDate.value = entry.date;
+  // Normalize date to YYYY-MM-DD for date input compatibility
+  try {
+    const d = new Date(entry.date);
+    elements.entryDate.value = Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  } catch (e) {
+    elements.entryDate.value = entry.date || '';
+  }
+  // Ensure meal type is present in the select (handles unexpected/legacy values)
+  if (entry.mealType && ![...elements.entryMealType.options].some((o) => o.value === entry.mealType)) {
+    const opt = document.createElement('option');
+    opt.value = entry.mealType;
+    opt.textContent = entry.mealType;
+    elements.entryMealType.appendChild(opt);
+  }
   elements.entryMealType.value = entry.mealType;
   elements.entryFood.value = entry.food;
   elements.entryCalories.value = entry.calories;
@@ -121,14 +134,15 @@ async function handleSubmit(event) {
     date: elements.entryDate.value,
     mealType: elements.entryMealType.value,
     food: elements.entryFood.value.trim(),
-    calories: Number(elements.entryCalories.value) || 0,
-    protein: Number(elements.entryProtein.value) || 0,
-    carbs: Number(elements.entryCarbs.value) || 0,
-    fat: Number(elements.entryFat.value) || 0,
+    // use parseFloat and NaN checks for robustness
+    calories: parseFloat(elements.entryCalories.value) || 0,
+    protein: parseFloat(elements.entryProtein.value) || 0,
+    carbs: parseFloat(elements.entryCarbs.value) || 0,
+    fat: parseFloat(elements.entryFat.value) || 0,
     notes: elements.entryNotes.value.trim(),
   };
 
-  if (!entry.food || !entry.date || !Number.isFinite(entry.calories) || entry.calories <= 0) {
+  if (!entry.food || !entry.date || Number.isNaN(entry.calories) || entry.calories <= 0) {
     window.alert('Please enter a food name, date, and calorie amount.');
     return;
   }

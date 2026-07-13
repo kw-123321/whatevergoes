@@ -10,7 +10,6 @@
   <header class="site-header">
     <div class="brand">Fitness Tracker</div>
     <nav class="nav-bar">
-      <a href="index.html">Home</a>
       <a href="login.html">Login</a>
     </nav>
   </header>
@@ -20,17 +19,19 @@
       <h1>Sign Up</h1>
       <form action="/signup" method="POST" class="auth-form">
         <label for="name">Full Name</label>
-        <input type="text" id="name" name="name" placeholder="Jane Doe" required /> 
-        <br>
+        <input type="text" id="name" name="name" placeholder="Jane Doe" required />
 
         <label for="email">Email address</label>
         <input type="email" id="email" name="email" placeholder="you@example.com" required />
-        <br>
 
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="Password" required minlength="6" />
-        <br>
-
+        <div style="position:relative; display:flex; align-items:center;">
+          <input type="password" id="password" name="password" placeholder="Password" required minlength="8" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}" title="Password must be at least 8 characters and include at least one uppercase letter, one lowercase letter, and one number." style="width:100%; padding-right:2.6rem;" />
+          <button type="button" id="toggle-password" aria-label="Show password" title="Show password" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:transparent; border:none; cursor:pointer; padding:0; margin:0; display:inline-flex; align-items:center; justify-content:center; color:#6b7280;">
+            <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+        </div>
+        <p id="caps-warning" style="display:none; color: #f97316; font-size:0.9rem; margin-top:0.25rem;">⚠️ Caps Lock is on!</p>
         <button type="submit" class="button">Create account</button>
       </form>
 
@@ -50,6 +51,57 @@
         alert("Please run the app with npm start, then open http://localhost:3000/signup.html");
       }
     });
+  </script>
+  <script>
+    (function() {
+      const pwd = document.getElementById('password');
+      const warn = document.getElementById('caps-warning');
+      if (!pwd || !warn) return;
+
+      function handleEvent(e) {
+        try {
+          const caps = e.getModifierState && e.getModifierState('CapsLock');
+          warn.style.display = caps ? 'block' : 'none';
+        } catch (err) {
+          // ignore
+        }
+      }
+
+      pwd.addEventListener('keydown', handleEvent);
+      pwd.addEventListener('keyup', handleEvent);
+      pwd.addEventListener('focus', () => { warn.style.display = 'none'; });
+      pwd.addEventListener('blur', () => { warn.style.display = 'none'; });
+    })();
+  </script>
+  <script>
+    (function() {
+      const pwd = document.getElementById('password');
+      const toggle = document.getElementById('toggle-password');
+      if (!pwd || !toggle) return;
+
+      const eyeSvg = {
+        show: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>',
+        hide: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.86 21.86 0 0 1 5.12-5.94"></path><path d="M1 1l22 22"></path></svg>'
+      };
+
+      // initial state: password hidden
+      let visible = false;
+
+      function updateUI() {
+        toggle.setAttribute('aria-pressed', String(visible));
+        toggle.title = visible ? 'Hide password' : 'Show password';
+        toggle.innerHTML = visible ? eyeSvg.hide : eyeSvg.show;
+      }
+
+      toggle.addEventListener('click', () => {
+        visible = !visible;
+        pwd.type = visible ? 'text' : 'password';
+        updateUI();
+      });
+
+      // ensure button shows correct initial icon
+      updateUI();
+    })();
   </script>
 </body>
 </html>

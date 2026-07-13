@@ -101,7 +101,20 @@ function renderWorkoutList() {
 function populateForm(workout) {
   state.editingId = workout._id;
   elements.formTitle.textContent = 'Edit workout';
-  elements.workoutDate.value = workout.date;
+  // Normalize date to YYYY-MM-DD for date input compatibility
+  try {
+    const d = new Date(workout.date);
+    elements.workoutDate.value = Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  } catch (e) {
+    elements.workoutDate.value = workout.date || '';
+  }
+  // Ensure the select contains the value we're trying to set (handles legacy/custom values)
+  if (workout.name && ![...elements.workoutName.options].some((o) => o.value === workout.name)) {
+    const opt = document.createElement('option');
+    opt.value = workout.name;
+    opt.textContent = workout.name;
+    elements.workoutName.appendChild(opt);
+  }
   elements.workoutName.value = workout.name;
   elements.workoutDuration.value = workout.duration;
   if (elements.workoutCalories) {
@@ -118,30 +131,38 @@ async function handleSubmit(event) {
   const workout = {
     date: elements.workoutDate.value,
     name: elements.workoutName.value.trim(),
-    duration: Number(elements.workoutDuration.value),
-    calories: elements.workoutCalories ? Number(elements.workoutCalories.value) || 0 : 0,
+    // parse numeric fields robustly
+    duration: parseFloat(elements.workoutDuration.value),
+    calories: elements.workoutCalories ? parseFloat(elements.workoutCalories.value) || 0 : 0,
     intensity: elements.workoutIntensity.value,
     notes: elements.workoutNotes.value.trim(),
   };
 
-  if (!workout.name || !workout.date || !Number.isFinite(workout.duration) || workout.duration <= 0) {
+  if (!workout.name || !workout.date || Number.isNaN(workout.duration) || workout.duration <= 0) {
     window.alert('Please enter a workout name, date, and duration.');
     return;
   }
 
   try {
+    let response;
     if (state.editingId) {
-      await fetch(`${API_URL}/${state.editingId}`, {
+      response = await fetch(`${API_URL}/${state.editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(workout),
       });
     } else {
-      await fetch(API_URL, {
+      response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(workout),
       });
+    }
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      window.alert(errData.message || 'Failed to save workout. Please try again.');
+      return;
     }
 
     resetForm();
@@ -155,7 +176,11 @@ async function handleSubmit(event) {
 
 async function deleteWorkout(id) {
   try {
-    await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      window.alert('Failed to delete workout. Please try again.');
+      return;
+    }
     if (state.editingId === id) {
       resetForm();
     }
