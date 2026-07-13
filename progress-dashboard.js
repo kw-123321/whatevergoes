@@ -1,24 +1,22 @@
 const WORKOUT_API = '/api/workouts';
-const GOAL_API = '/api/goals';
 const NUTRITION_API = '/api/entries';
 
 async function loadProgressDashboard() {
   try {
-    const [workoutResponse, goalResponse, nutritionResponse] =
-      await Promise.all([
-        fetch(WORKOUT_API),
-        fetch(GOAL_API),
-        fetch(NUTRITION_API)
-      ]);
+    const [workoutResponse, nutritionResponse] = await Promise.all([
+      fetch(WORKOUT_API),
+      fetch(NUTRITION_API)
+    ]);
 
     const workouts = await workoutResponse.json();
-    const goals = await goalResponse.json();
     const nutritionEntries = await nutritionResponse.json();
 
     displayWorkoutProgress(workouts);
-    displayGoalProgress(goals);
     displayNutritionProgress(nutritionEntries);
+    displayRecentWorkouts(workouts);
+    displayRecentNutrition(nutritionEntries);
 
+    loadCurrentUser();
   } catch (error) {
     console.error('Failed to load progress dashboard:', error);
   }
@@ -39,48 +37,6 @@ function displayWorkoutProgress(workouts) {
   document.getElementById('total-duration').textContent = totalDuration;
   document.getElementById('calories-burned').textContent =
     totalCaloriesBurned;
-
-  displayRecentWorkouts(workouts);
-}
-
-function displayRecentWorkouts(workouts) {
-  const workoutList = document.getElementById('recent-workouts');
-
-  workoutList.innerHTML = '';
-
-  if (workouts.length === 0) {
-    workoutList.innerHTML = '<li>No workouts recorded yet.</li>';
-    return;
-  }
-
-  const recentWorkouts = workouts.slice(0, 5);
-
-  recentWorkouts.forEach((workout) => {
-    const listItem = document.createElement('li');
-
-    listItem.textContent =
-      `${workout.name} - ${workout.duration} minutes - ` +
-      `${workout.calories} calories`;
-
-    workoutList.appendChild(listItem);
-  });
-}
-
-function displayGoalProgress(goals) {
-  const goalCount = goals.length;
-
-  const goalProgressText =
-    document.getElementById('goal-progress-text');
-
-  const goalProgressBar =
-    document.getElementById('goal-progress-bar');
-
-  goalProgressText.textContent =
-    `${goalCount} goal${goalCount === 1 ? '' : 's'} recorded`;
-
-  const progressPercentage = Math.min(goalCount * 20, 100);
-
-  goalProgressBar.style.width = `${progressPercentage}%`;
 }
 
 function displayNutritionProgress(entries) {
@@ -111,6 +67,110 @@ function displayNutritionProgress(entries) {
 
   document.getElementById('total-fat').textContent =
     totalFat;
+}
+
+function displayRecentWorkouts(workouts) {
+  const workoutList = document.getElementById('recent-workouts');
+
+  workoutList.innerHTML = '';
+
+  if (workouts.length === 0) {
+    workoutList.innerHTML = `
+      <div class="empty-state">
+        No workouts recorded yet.
+      </div>
+    `;
+
+    return;
+  }
+
+  const recentWorkouts = workouts.slice(0, 5);
+
+  recentWorkouts.forEach((workout) => {
+    const workoutEntry = document.createElement('div');
+
+    workoutEntry.className = 'workout-entry';
+
+    workoutEntry.innerHTML = `
+      <div class="workout-entry-top">
+        <div>
+          <h3>${workout.name}</h3>
+          <p>${workout.date}</p>
+        </div>
+
+        <span class="pill intensity-pill">
+          ${workout.intensity}
+        </span>
+      </div>
+
+      <div class="workout-meta">
+        <span>${workout.duration} minutes</span>
+        <span>${workout.calories} calories burned</span>
+      </div>
+    `;
+
+    workoutList.appendChild(workoutEntry);
+  });
+}
+
+function displayRecentNutrition(entries) {
+  const nutritionList = document.getElementById('recent-nutrition');
+
+  nutritionList.innerHTML = '';
+
+  if (entries.length === 0) {
+    nutritionList.innerHTML = `
+      <div class="empty-state">
+        No nutrition entries recorded yet.
+      </div>
+    `;
+
+    return;
+  }
+
+  const recentEntries = entries.slice(0, 5);
+
+  recentEntries.forEach((entry) => {
+    const nutritionEntry = document.createElement('div');
+
+    nutritionEntry.className = 'workout-entry';
+
+    nutritionEntry.innerHTML = `
+      <div class="workout-entry-top">
+        <div>
+          <h3>${entry.food}</h3>
+          <p>${entry.date}</p>
+        </div>
+
+        <span class="pill">
+          ${entry.mealType}
+        </span>
+      </div>
+
+      <div class="workout-meta">
+        <span>${entry.calories} kcal</span>
+        <span>${entry.protein}g protein</span>
+        <span>${entry.carbs}g carbs</span>
+        <span>${entry.fat}g fat</span>
+      </div>
+    `;
+
+    nutritionList.appendChild(nutritionEntry);
+  });
+}
+
+async function loadCurrentUser() {
+  try {
+    const response = await fetch('/api/current-user');
+    const user = await response.json();
+
+    if (user.loggedIn) {
+      document.getElementById('user-profile-display').textContent =
+        user.name;
+    }
+  } catch (error) {
+    console.error('Failed to load current user:', error);
+  }
 }
 
 loadProgressDashboard();
