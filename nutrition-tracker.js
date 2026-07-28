@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'fitnessTrackerNutrition';
+const API_URL = '/api/entries';
 
 const state = {
   entries: [],
@@ -24,21 +24,14 @@ const elements = {
   lastEntry: document.getElementById('last-entry'),
 };
 
-function loadEntries() {
+async function loadEntries() {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    state.entries = stored ? JSON.parse(stored) : [];
+    const response = await fetch(API_URL);
+    state.entries = await response.json();
   } catch (error) {
+    console.error('Failed to load entries:', error);
     state.entries = [];
   }
-}
-
-function saveEntries() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries));
-}
-
-function createEntryId() {
-  return `entry-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
 function resetForm() {
@@ -96,21 +89,34 @@ function renderEntryList() {
       </div>
       ${entry.notes ? `<p class="workout-notes-preview">${entry.notes}</p>` : ''}
       <div class="note-item-actions">
-        <button type="button" class="edit-note-button" data-id="${entry.id}">Edit</button>
-        <button type="button" class="delete-note-button" data-id="${entry.id}">Delete</button>
+        <button type="button" class="edit-note-button" data-id="${entry._id}">Edit</button>
+        <button type="button" class="delete-note-button" data-id="${entry._id}">Delete</button>
       </div>
     `;
 
     card.querySelector('.edit-note-button').addEventListener('click', () => populateForm(entry));
-    card.querySelector('.delete-note-button').addEventListener('click', () => deleteEntry(entry.id));
+    card.querySelector('.delete-note-button').addEventListener('click', () => deleteEntry(entry._id));
     elements.nutritionList.appendChild(card);
   });
 }
 
 function populateForm(entry) {
-  state.editingId = entry.id;
+  state.editingId = entry._id;
   elements.formTitle.textContent = 'Edit meal';
-  elements.entryDate.value = entry.date;
+  // Normalize date to YYYY-MM-DD for date input compatibility
+  try {
+    const d = new Date(entry.date);
+    elements.entryDate.value = Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  } catch (e) {
+    elements.entryDate.value = entry.date || '';
+  }
+  // Ensure meal type is present in the select (handles unexpected/legacy values)
+  if (entry.mealType && ![...elements.entryMealType.options].some((o) => o.value === entry.mealType)) {
+    const opt = document.createElement('option');
+    opt.value = entry.mealType;
+    opt.textContent = entry.mealType;
+    elements.entryMealType.appendChild(opt);
+  }
   elements.entryMealType.value = entry.mealType;
   elements.entryFood.value = entry.food;
   elements.entryCalories.value = entry.calories;
@@ -121,44 +127,62 @@ function populateForm(entry) {
   elements.entryFood.focus();
 }
 
-function handleSubmit(event) {
+async function handleSubmit(event) {
   event.preventDefault();
 
   const entry = {
-    id: state.editingId || createEntryId(),
     date: elements.entryDate.value,
     mealType: elements.entryMealType.value,
     food: elements.entryFood.value.trim(),
-    calories: Number(elements.entryCalories.value) || 0,
-    protein: Number(elements.entryProtein.value) || 0,
-    carbs: Number(elements.entryCarbs.value) || 0,
-    fat: Number(elements.entryFat.value) || 0,
+    // use parseFloat and NaN checks for robustness
+    calories: parseFloat(elements.entryCalories.value) || 0,
+    protein: parseFloat(elements.entryProtein.value) || 0,
+    carbs: parseFloat(elements.entryCarbs.value) || 0,
+    fat: parseFloat(elements.entryFat.value) || 0,
     notes: elements.entryNotes.value.trim(),
   };
 
-  if (!entry.food || !entry.date || !Number.isFinite(entry.calories) || entry.calories <= 0) {
+  if (!entry.food || !entry.date || Number.isNaN(entry.calories) || entry.calories <= 0) {
     window.alert('Please enter a food name, date, and calorie amount.');
     return;
   }
 
-  if (state.editingId) {
-    state.entries = state.entries.map((item) => (item.id === state.editingId ? entry : item));
-  } else {
-    state.entries.push(entry);
-  }
+  try {
+    if (state.editingId) {
+      await fetch(`${API_URL}/${state.editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+      });
+    } else {
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+      });
+    }
 
-  saveEntries();
-  resetForm();
-  render();
+    resetForm();
+    await loadEntries();
+    render();
+  } catch (error) {
+    window.alert('Could not save entry. Check that the backend server is running.');
+    console.error(error);
+  }
 }
 
-function deleteEntry(id) {
-  state.entries = state.entries.filter((entry) => entry.id !== id);
-  saveEntries();
-  if (state.editingId === id) {
-    resetForm();
+async function deleteEntry(id) {
+  try {
+    await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+    if (state.editingId === id) {
+      resetForm();
+    }
+    await loadEntries();
+    render();
+  } catch (error) {
+    window.alert('Could not delete entry. Check that the backend server is running.');
+    console.error(error);
   }
-  render();
 }
 
 function render() {
@@ -166,11 +190,11 @@ function render() {
   renderEntryList();
 }
 
-function init() {
-  loadEntries();
+async function init() {
   elements.form.addEventListener('submit', handleSubmit);
   elements.clearButton.addEventListener('click', resetForm);
   elements.entryDate.value = new Date().toISOString().slice(0, 10);
+  await loadEntries();
   render();
 }
 

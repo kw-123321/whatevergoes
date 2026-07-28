@@ -1,9 +1,4 @@
-const STORAGE_KEY = 'fitnessTrackerWorkouts';
-
-const SERVER_WORKOUTS_URL = '/api/workouts';
-const SERVER_SAVE_WORKOUT_URL = '/api/log-workout';
-
-const ALLOWED_ACTIVITIES = ['Gym', 'Cardio', 'Sports', 'Light activity', 'Cycling'];
+const API_URL = '/api/workouts';
 
 const state = {
   workouts: [],
@@ -16,11 +11,11 @@ const elements = {
   workoutDate: document.getElementById('workout-date'),
   workoutName: document.getElementById('workout-name'),
   workoutDuration: document.getElementById('workout-duration'),
+  workoutCalories: document.getElementById('workout-calories'),
   workoutIntensity: document.getElementById('workout-intensity'),
   workoutNotes: document.getElementById('workout-notes'),
   saveButton: document.getElementById('save-workout-button'),
   clearButton: document.getElementById('clear-form-button'),
-  saveFeedback: document.getElementById('save-feedback'),
   workoutList: document.getElementById('workout-list'),
   totalWorkouts: document.getElementById('total-workouts'),
   weeklyWorkouts: document.getElementById('weekly-workouts'),
@@ -28,84 +23,21 @@ const elements = {
 };
 
 async function loadWorkouts() {
-  let localStored = [];
-
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    localStored = stored ? JSON.parse(stored) : [];
+    const response = await fetch(API_URL);
+    state.workouts = await response.json();
   } catch (error) {
-    localStored = [];
+    console.error('Failed to load workouts:', error);
+    state.workouts = [];
   }
-
-  try {
-    const response = await fetch(SERVER_WORKOUTS_URL, { credentials: 'same-origin' });
-    if (response.ok) {
-      const data = await response.json();
-      if (Array.isArray(data.workouts)) {
-        state.workouts = data.workouts.length ? data.workouts : localStored;
-        saveWorkouts();
-        return;
-      }
-    }
-  } catch (error) {
-    // Server unavailable or user not logged in; fall back to local data.
-  }
-
-  state.workouts = localStored;
-}
-
-function saveWorkouts() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.workouts));
-}
-
-async function saveWorkoutToServer(workout) {
-  const response = await fetch(SERVER_SAVE_WORKOUT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'same-origin',
-    body: JSON.stringify({
-      date: workout.date,
-      activity: workout.name,
-      duration: workout.duration,
-      intensity: workout.intensity,
-      notes: workout.notes,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || 'Could not save workout to the server.');
-  }
-
-  return response.json();
-}
-
-function createWorkoutId() {
-  return `workout-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-}
-
-function getTodayString() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function setDateConstraints() {
-  elements.workoutDate.value = getTodayString();
 }
 
 function resetForm() {
   elements.form.reset();
-  setDateConstraints();
+  elements.workoutDate.value = new Date().toISOString().slice(0, 10);
   elements.workoutIntensity.value = 'Moderate';
   state.editingId = null;
   elements.formTitle.textContent = 'Log a workout';
-}
-
-function showSaveFeedback(message) {
-  elements.saveFeedback.textContent = message;
 }
 
 function formatDisplayDate(dateValue) {
@@ -151,26 +83,43 @@ function renderWorkoutList() {
       </div>
       <div class="workout-meta">
         <span>${workout.duration} min</span>
+        <span>${workout.calories ? `${workout.calories} kcal` : 'Calories not set'}</span>
       </div>
       ${workout.notes ? `<p class="workout-notes-preview">${workout.notes}</p>` : ''}
       <div class="note-item-actions">
-        <button type="button" class="edit-note-button" data-id="${workout.id}">Edit</button>
-        <button type="button" class="delete-note-button" data-id="${workout.id}">Delete</button>
+        <button type="button" class="edit-note-button" data-id="${workout._id}">Edit</button>
+        <button type="button" class="delete-note-button" data-id="${workout._id}">Delete</button>
       </div>
     `;
 
     card.querySelector('.edit-note-button').addEventListener('click', () => populateForm(workout));
-    card.querySelector('.delete-note-button').addEventListener('click', () => deleteWorkout(workout.id));
+    card.querySelector('.delete-note-button').addEventListener('click', () => deleteWorkout(workout._id));
     elements.workoutList.appendChild(card);
   });
 }
 
 function populateForm(workout) {
-  state.editingId = workout.id;
+  state.editingId = workout._id;
   elements.formTitle.textContent = 'Edit workout';
-  setDateConstraints();
-  elements.workoutName.value = ALLOWED_ACTIVITIES.includes(workout.name) ? workout.name : '';
+  // Normalize date to YYYY-MM-DD for date input compatibility
+  try {
+    const d = new Date(workout.date);
+    elements.workoutDate.value = Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  } catch (e) {
+    elements.workoutDate.value = workout.date || '';
+  }
+  // Ensure the select contains the value we're trying to set (handles legacy/custom values)
+  if (workout.name && ![...elements.workoutName.options].some((o) => o.value === workout.name)) {
+    const opt = document.createElement('option');
+    opt.value = workout.name;
+    opt.textContent = workout.name;
+    elements.workoutName.appendChild(opt);
+  }
+  elements.workoutName.value = workout.name;
   elements.workoutDuration.value = workout.duration;
+  if (elements.workoutCalories) {
+    elements.workoutCalories.value = workout.calories || '';
+  }
   elements.workoutIntensity.value = workout.intensity;
   elements.workoutNotes.value = workout.notes || '';
   elements.workoutName.focus();
@@ -180,61 +129,67 @@ async function handleSubmit(event) {
   event.preventDefault();
 
   const workout = {
-    id: state.editingId || createWorkoutId(),
     date: elements.workoutDate.value,
     name: elements.workoutName.value.trim(),
-    duration: Number(elements.workoutDuration.value),
+    // parse numeric fields robustly
+    duration: parseFloat(elements.workoutDuration.value),
+    calories: elements.workoutCalories ? parseFloat(elements.workoutCalories.value) || 0 : 0,
     intensity: elements.workoutIntensity.value,
     notes: elements.workoutNotes.value.trim(),
   };
 
-  if (!workout.name || !workout.date || !Number.isFinite(workout.duration) || workout.duration <= 0) {
-    window.alert("Please choose an activity, today's date, and a valid duration.");
+  if (!workout.name || !workout.date || Number.isNaN(workout.duration) || workout.duration <= 0) {
+    window.alert('Please enter a workout name, date, and duration.');
     return;
   }
 
-  if (!ALLOWED_ACTIVITIES.includes(workout.name)) {
-    window.alert('Please choose one of the allowed activities.');
-    return;
-  }
-
-  if (workout.date !== getTodayString()) {
-    window.alert("Please select today's date for your workout.");
-    return;
-  }
-
-  let savedToServer = false;
-
-  if (!state.editingId) {
-    try {
-      await saveWorkoutToServer(workout);
-      savedToServer = true;
-    } catch (error) {
-      console.warn('Server workout save failed:', error);
+  try {
+    let response;
+    if (state.editingId) {
+      response = await fetch(`${API_URL}/${state.editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(workout),
+      });
+    } else {
+      response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(workout),
+      });
     }
-  }
 
-  if (state.editingId) {
-    state.workouts = state.workouts.map((item) => (item.id === state.editingId ? workout : item));
-  } else {
-    state.workouts.push(workout);
-  }
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      window.alert(errData.message || 'Failed to save workout. Please try again.');
+      return;
+    }
 
-  saveWorkouts();
-  resetForm();
-  render();
-  showSaveFeedback(savedToServer
-    ? 'Workout saved to MySQL and added to your log.'
-    : 'Workout saved locally. Log in or start the server to persist to MySQL.');
+    resetForm();
+    await loadWorkouts();
+    render();
+  } catch (error) {
+    window.alert('Could not save workout. Check that the backend server is running.');
+    console.error(error);
+  }
 }
 
-function deleteWorkout(id) {
-  state.workouts = state.workouts.filter((workout) => workout.id !== id);
-  saveWorkouts();
-  if (state.editingId === id) {
-    resetForm();
+async function deleteWorkout(id) {
+  try {
+    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      window.alert('Failed to delete workout. Please try again.');
+      return;
+    }
+    if (state.editingId === id) {
+      resetForm();
+    }
+    await loadWorkouts();
+    render();
+  } catch (error) {
+    window.alert('Could not delete workout. Check that the backend server is running.');
+    console.error(error);
   }
-  render();
 }
 
 function render() {
@@ -243,41 +198,36 @@ function render() {
 }
 
 async function init() {
-  await loadWorkouts();
   elements.form.addEventListener('submit', handleSubmit);
   elements.clearButton.addEventListener('click', resetForm);
-  setDateConstraints();
-  elements.workoutDate.value = getTodayString();
+  elements.workoutDate.value = new Date().toISOString().slice(0, 10);
+  await loadWorkouts();
   render();
 }
 
 init();
 
-// ========================================================
+// ============================================================
 // SAFE DYNAMIC LOGOUT BUTTON INJECTOR
-// ========================================================
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. Look for the navigation element (checking multiple common classes)
-    const navBar = document.querySelector(".nav-bar") || document.querySelector("nav") || document.querySelector(".site-header");
-    
-    // 2. Only add the button if the nav bar exists AND the button isn't already there
-    if (navBar && !document.querySelector(".logout-btn")) {
-        const logoutLink = document.createElement("a");
-        logoutLink.href = "logout.html";
-        logoutLink.className = "logout-btn";
-        logoutLink.textContent = "Logout";
-        
-        // Apply the exact styles so it renders correctly everywhere
-        logoutLink.style.marginLeft = "15px";
-        logoutLink.style.padding = "6px 12px";
-        logoutLink.style.backgroundColor = "#ff4d4d"; 
-        logoutLink.style.color = "white";
-        logoutLink.style.borderRadius = "4px";
-        logoutLink.style.fontWeight = "bold";
-        logoutLink.style.textDecoration = "none";
-        logoutLink.style.display = "inline-block";
-        
-        // Push it cleanly onto the end of the nav bar
-        navBar.appendChild(logoutLink);
-    }
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  const navBar = document.querySelector('.nav-bar') || document.querySelector('nav');
+
+  if (navBar && !document.querySelector('.logout-btn')) {
+    const logoutLink = document.createElement('a');
+    logoutLink.href = '/logout';
+    logoutLink.className = 'logout-btn';
+    logoutLink.textContent = 'Logout';
+
+    logoutLink.style.marginLeft = '15px';
+    logoutLink.style.padding = '6px 12px';
+    logoutLink.style.backgroundColor = '#ff4d4d';
+    logoutLink.style.color = 'white';
+    logoutLink.style.borderRadius = '4px';
+    logoutLink.style.fontWeight = 'bold';
+    logoutLink.style.textDecoration = 'none';
+    logoutLink.style.display = 'inline-block';
+
+    navBar.appendChild(logoutLink);
+  }
 });

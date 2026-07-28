@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1783316589824,
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "test123"
+  },
+  {
+    "id": 1783436409257,
+    "name": "Loewe sing",
+    "email": "loewesing@gmail.com",
+    "password": "loewesing"
+  },
+  {
+    "id": 1783437580971,
+    "name": "Test User",
+    "email": "test@test.com",
+    "password": "pass123"
+  },
+  {
+    "id": 1783437620892,
+    "name": "Test User",
+    "email": "test3@test.com",
+    "password": "pass123"
+  }
+]

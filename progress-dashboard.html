@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitness Tracker - Progress Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="brand">Fitness Tracker</div>
+
+    <nav class="nav-bar" style="display: flex; align-items: center;">
+      <div
+        id="user-profile-display"
+        style="font-weight: bold; font-size: 1rem; padding: 0 15px; color: #4f46e5;">
+      </div>
+
+      <a href="index.html">Home</a>
+      <a href="goal-tracker.html">Goal Setting</a>
+      <a href="workout-log.html">Workout Log</a>
+      <a href="nutrition-tracker.html">Nutrition Tracker</a>
+      <a href="progress-dashboard.html" class="active">Progress Dashboard</a>
+      <a href="/logout" class="logout-btn">Logout</a>
+    </nav>
+  </header>
+
+  <main class="workout-page">
+
+    <section class="workout-hero">
+      <div>
+        <span class="pill">Progress Summary</span>
+
+        <h1>Your fitness progress at a glance</h1>
+
+        <p>
+          Review your workout and nutrition activity in one place.
+          Your progress dashboard automatically summarises information
+          recorded in the Workout Log and Nutrition Tracker.
+        </p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total workouts</span>
+          <strong id="total-workouts">0</strong>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-label">Total workout time</span>
+          <strong>
+            <span id="total-duration">0</span> minutes
+          </strong>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-label">Calories burned</span>
+          <strong id="calories-burned">0</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-it-works">
+      <h2>Nutrition summary</h2>
+
+      <div class="feature-grid">
+        <article>
+          <h3>Calories consumed</h3>
+          <p>
+            <strong id="calories-consumed">0</strong> kcal
+          </p>
+        </article>
+
+        <article>
+          <h3>Protein</h3>
+          <p>
+            <strong id="total-protein">0</strong> g
+          </p>
+        </article>
+
+        <article>
+          <h3>Carbohydrates</h3>
+          <p>
+            <strong id="total-carbs">0</strong> g
+          </p>
+        </article>
+
+        <article>
+          <h3>Fat</h3>
+          <p>
+            <strong id="total-fat">0</strong> g
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="workout-grid" style="margin-top: 2rem;">
+
+      <div class="detail-card log-card">
+        <div class="log-card-header">
+          <div>
+            <span class="pill">Workout Activity</span>
+            <h2>Recent workouts</h2>
+          </div>
+        </div>
+
+        <div id="recent-workouts" class="workout-list">
+          <div class="empty-state">
+            No workouts recorded yet.
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-card log-card">
+        <div class="log-card-header">
+          <div>
+            <span class="pill">Nutrition Activity</span>
+            <h2>Recent nutrition entries</h2>
+          </div>
+        </div>
+
+        <div id="recent-nutrition" class="workout-list">
+          <div class="empty-state">
+            No nutrition entries recorded yet.
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Fitness Tracker Progress Dashboard</p>
+  </footer>
+
+  <script src="progress-dashboard.js"></script>
+</body>
+
+</html>
