@@ -1,95 +1,85 @@
+﻿require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const mysql = require('mysql2');
-const session = require('express-session'); // Required for user profile sessions
+const session = require('express-session');
 const app = express();
 
-// 1. Establish connection to your MySQL database schema
-// Replace these values with your collaborator's remote database details.
 const dbConfig = {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'RP738964$',
-    database: process.env.DB_NAME || 'c270_fitnesstrackerusers',
-    port: Number(process.env.DB_PORT || 3306),
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: Number(process.env.DB_PORT)
 };
 
 const db = mysql.createConnection(dbConfig);
 
-// Connect to MySQL
 db.connect((err) => {
     if (err) {
         console.error('Error connecting to MySQL Database:', err);
         return;
     }
-    console.log('Successfully connected to the MySQL database!');
+    console.log(`Successfully connected to MySQL at ${dbConfig.host}:${dbConfig.port} using database ${dbConfig.database}`);
 });
 
-// 2. Session Middleware Setup (Helps the server remember who logged in)
 app.use(session({
-    secret: 'fitness_tracker_secret_key', 
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 } // Session cookie lasts for 1 day
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000
+    }
 }));
 
-// 3. Serves your static HTML/CSS files from this folder
 app.use(express.static(__dirname));
-
-// 4. Allows the server to parse form and JSON data sent from your pages
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// 5. SIGNUP ROUTE (With Duplicate Email Checking)
 app.post('/signup', (req, res) => {
-    const { name, email, password } = req.body; 
-    
-    const sqlQuery = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
-    
-    db.query(sqlQuery, [name, email, password], (err, result) => {
+    const { name, email, password } = req.body;
+    const sqlQuery = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
+
+    db.query(sqlQuery, [name, email, password], (err) => {
         if (err) {
-            // Check if the error is due to a duplicate entry (MySQL unique error code 1062)
             if (err.errno === 1062) {
                 console.log(`Signup blocked: Email ${email} already exists.`);
                 return res.send("<h1>An account with this email address already exists.</h1><a href='/login.html'>Go to Log In</a>");
             }
-            
-            console.error("Database insert error:", err);
-            return res.status(500).send("<h1>Database error occurred during registration.</h1>");
+
+            console.error('Database insert error:', err);
+            return res.status(500).send('<h1>Database error occurred during registration.</h1>');
         }
 
-        console.log("User saved to MySQL successfully!"); 
+        console.log('User saved to MySQL successfully!');
         return res.redirect('/login.html');
     });
 });
 
-// 6. LOGIN ROUTE (Validates credentials and initializes the session)
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
-
-    const sqlQuery = "SELECT * FROM users WHERE email = ? AND password = ?";
+    const sqlQuery = 'SELECT * FROM users WHERE email = ? AND password = ?';
 
     db.query(sqlQuery, [email, password], (err, results) => {
         if (err) {
-            console.error("Database query error:", err);
-            return res.status(500).send("<h1>Database error occurred during login.</h1>");
+            console.error('Database query error:', err);
+            return res.status(500).send('<h1>Database error occurred during login.</h1>');
         }
 
         if (results.length > 0) {
-            // Store the user's name and unique ID into the session store!
             req.session.user = {
                 id: results[0].userId,
                 name: results[0].name
             };
             console.log(`User logged in successfully: ${results[0].name}`);
             return res.redirect('/index.html');
-        } else {
-            return res.send("<h1>Invalid email or password.</h1><a href='/login.html'>Try Again</a>");
         }
+
+        return res.send("<h1>Invalid email or password.</h1><a href='/login.html'>Try Again</a>");
     });
 });
 
-// 7. PROFILE API ROUTE (Frontend HTML files fetch from here to find out who is logged in)
 app.get('/api/current-user', (req, res) => {
     if (req.session.user) {
         res.json({ loggedIn: true, name: req.session.user.name });
@@ -98,19 +88,18 @@ app.get('/api/current-user', (req, res) => {
     }
 });
 
-// 8. WORKOUTS API ROUTE (Returns logged-in user's workouts from MySQL)
 app.get('/api/workouts', (req, res) => {
     if (!req.session.user) {
         return res.status(401).json({ workouts: [] });
     }
 
     const userId = req.session.user.id;
-    const sqlQuery = "SELECT workoutId, date, activity, duration, intensity, notes FROM workoutlog WHERE userId = ? ORDER BY date DESC";
+    const sqlQuery = 'SELECT workoutId, date, activity, duration, intensity, notes FROM workoutlog WHERE userId = ? ORDER BY date DESC';
 
     db.query(sqlQuery, [userId], (err, results) => {
         if (err) {
-            console.error("Database workout load error:", err);
-            return res.status(500).json({ workouts: [], message: "Failed to load workouts." });
+            console.error('Database workout load error:', err);
+            return res.status(500).json({ workouts: [], message: 'Failed to load workouts.' });
         }
 
         const workouts = results.map((row) => ({
@@ -126,36 +115,27 @@ app.get('/api/workouts', (req, res) => {
     });
 });
 
-// 9. LOG WORKOUT ROUTE (Saves workout data linked to the logged-in user)
 app.post('/api/log-workout', (req, res) => {
-    // 1. Make sure a user is actually logged in before saving a workout
     if (!req.session.user) {
         return res.status(401).send("<h1>Unauthorized. Please log in first.</h1><a href='/login.html'>Go to Login</a>");
     }
 
-    // 2. Extract the data sent from the frontend form
     const { date, activity, duration, intensity, notes } = req.body;
-    
-    // Grab the active user's ID from their session token
-    const userId = req.session.user.id; 
+    const userId = req.session.user.id;
+    const sqlQuery = 'INSERT INTO workoutlog (userId, date, activity, duration, intensity, notes) VALUES (?, ?, ?, ?, ?, ?)';
 
-    // 3. Match the columns in your MySQL workbench table perfectly
-    const sqlQuery = "INSERT INTO workoutlog (userId, date, activity, duration, intensity, notes) VALUES (?, ?, ?, ?, ?, ?)";
-    
-    db.query(sqlQuery, [userId, date, activity, duration, intensity, notes || null], (err, result) => {
+    db.query(sqlQuery, [userId, date, activity, duration, intensity, notes || null], (err) => {
         if (err) {
-            console.error("Database workout save error:", err);
-            return res.status(500).json({ success: false, message: "Failed to save workout to the database." });
+            console.error('Database workout save error:', err);
+            return res.status(500).json({ success: false, message: 'Failed to save workout to the database.' });
         }
-        
+
         console.log(`Workout saved successfully for User ID ${userId}!`);
-        // Send a success JSON response back to your frontend script
-        return res.json({ success: true, message: "Workout saved successfully!" });
+        return res.json({ success: true, message: 'Workout saved successfully!' });
     });
 });
 
-// 8. Start the server on Port 3000
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server started! Open http://localhost:${PORT}/signup.html in your browser.`);
 });
