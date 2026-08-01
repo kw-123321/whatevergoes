@@ -8,8 +8,8 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
 
-    autoDeploy: true
-    healthCheckPath: /login.html
+    autoDeployTrigger: commit
+    healthCheckPath: /health
 
     envVars:
       - key: NODE_ENV
@@ -22,7 +22,7 @@ services:
         value: gateway01.ap-southeast-1.prod.aws.tidbcloud.com
 
       - key: DB_PORT
-        value: 4000
+        value: "4000"
 
       - key: DB_NAME
         value: test

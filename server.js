@@ -87,6 +87,20 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// Add this route in server.js after:
+// app.use(express.static(__dirname));
+// and before the other app.get routes.
+
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    service: 'fitness-tracker',
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
+
+
 app.get('/', (req, res) => {
   res.redirect('/login.html');
 });
