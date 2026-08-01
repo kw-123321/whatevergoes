@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: fitness-tracker
+    runtime: docker
+    repo: https://github.com/kw-123321/whatevergoes.git
+    branch: main
+
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+
+    autoDeploy: true
+    healthCheckPath: /login.html
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: 3000
+
+      - key: DB_HOST
+        value: gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+
+      - key: DB_PORT
+        value: 4000
+
+      - key: DB_NAME
+        value: test
+
+      - key: DB_USER
+        sync: false
+
+      - key: DB_PASSWORD
+        sync: false
+
+      - key: SESSION_SECRET
+        sync: false
