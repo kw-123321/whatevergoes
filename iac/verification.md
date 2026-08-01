@@ -17,4 +17,4 @@ Use this checklist to prove that the Infrastructure as Code setup works.
 - [ ] Render service becomes healthy
 - [ ] Login page opens
 - [ ] Database connection works
-- [ ] GitHub commit shows Member 2 contribution
+- [ ] GitHub commit shows kingsley contribution
