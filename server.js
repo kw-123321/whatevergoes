@@ -83,13 +83,9 @@ app.use(session({
   cookie: { maxAge: 24 * 60 * 60 * 1000 },
 }));
 
-app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
-
-// Add this route in server.js after:
-// app.use(express.static(__dirname));
-// and before the other app.get routes.
 
 app.get('/health', (req, res) => {
   res.status(200).json({
