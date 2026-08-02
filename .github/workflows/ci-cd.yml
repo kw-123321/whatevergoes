@@ -1,0 +1,77 @@
+# CI/CD Pipeline for the Fitness Tracker app
+# Owner: Member 3 (CI/CD Pipeline Engineer)
+#
+# What this does, in order:
+#   checkout -> install dependencies -> test -> build Docker image -> deploy
+#
+# It runs automatically on every push / pull request to the main branch.
+
+name: CI/CD Pipeline
+
+# ---- WHEN does this run? ----
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    # The pipeline runs on a fresh, GitHub-hosted Ubuntu machine (a "runner").
+    # It starts completely empty every time, which is why step 1 is checkout.
+    runs-on: ubuntu-latest
+
+    steps:
+      # ---- STAGE 1: CHECKOUT ----
+      # Download our repository code onto the runner so it has something to work with.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ---- STAGE 2: INSTALL DEPENDENCIES ----
+      # Install Node.js 22 (same version as our Dockerfile: node:22-alpine),
+      # then install the npm packages listed in package.json.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      # ---- STAGE 3: TEST ----
+      # Run the test suite. We use "--if-present" so the pipeline does NOT fail
+      # while there is no "test" script yet (Member 5 owns testing). Once they add
+      # a "test" script to package.json, it will automatically run here and gate deploys.
+      - name: Run tests
+        run: npm test --if-present
+
+      # ---- STAGE 4: BUILD DOCKER IMAGE ----
+      # Build the container image from our Dockerfile. This is the real proof that
+      # the app packages correctly. If the image fails to build, deploy never happens.
+      - name: Build Docker image
+        run: docker build -t fitness-tracker:${{ github.sha }} .
+
+      # ---- STAGE 5: DEPLOY ----
+      # Only deploy on a real push to main (not on pull requests), and only after
+      # every step above has passed.
+      #
+      # This pings Render's Deploy Hook (a secret URL) to trigger a redeploy of the
+      # live app at https://fitness-tracker-uu3w.onrender.com
+      #
+      # If the RENDER_DEPLOY_HOOK_URL secret is not set, we skip gracefully and let
+      # Render's built-in auto-deploy (autoDeployTrigger: commit in render.yaml) handle it.
+      - name: Deploy to Render
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "Triggering Render deploy via deploy hook..."
+            curl -fsSL "$RENDER_DEPLOY_HOOK_URL"
+            echo ""
+            echo "✅ Deploy triggered on Render."
+          else
+            echo "ℹ️ No RENDER_DEPLOY_HOOK_URL secret set."
+            echo "   Render's auto-deploy (autoDeployTrigger: commit) will handle the deploy instead."
+          fi
