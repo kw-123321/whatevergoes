@@ -101,6 +101,38 @@
         <div id="nutrition-list" class="workout-list"></div>
       </section>
     </section>
+
+    <section class="workout-grid" style="margin-top: 1.5rem;">
+      <form class="detail-card form-card" id="bmi-form">
+        <h2>BMI &amp; Health Score</h2>
+        <p style="color:#4b5563; margin-top:-0.5rem;">Check your Body Mass Index, category, and health score.</p>
+
+        <label for="bmi-height">Height (cm)</label>
+        <input id="bmi-height" type="number" min="50" max="260" step="0.1" placeholder="e.g. 175" />
+
+        <label for="bmi-weight">Weight (kg)</label>
+        <input id="bmi-weight" type="number" min="20" max="400" step="0.1" placeholder="e.g. 70" />
+
+        <div class="form-actions">
+          <button type="submit" class="button">Calculate</button>
+        </div>
+        <p id="bmi-error" style="color:#dc2626; font-weight:600; min-height:1.2rem;"></p>
+      </form>
+
+      <section class="detail-card">
+        <h2>Result</h2>
+        <div style="text-align:center; padding:0.5rem 0;">
+          <div id="bmi-number" style="font-size:3rem; font-weight:800; line-height:1;">&mdash;</div>
+          <div id="bmi-category" style="font-size:1.15rem; font-weight:700;">Enter your details</div>
+        </div>
+        <div style="font-weight:600; color:#4b5563;">Health score</div>
+        <div style="background:#e5e7eb; border-radius:999px; height:14px; overflow:hidden; margin-top:0.4rem;">
+          <div id="bmi-score-fill" style="height:100%; background:#6366f1; width:0; transition:width 0.4s ease;"></div>
+        </div>
+        <div id="bmi-score-text" style="font-weight:700; margin-top:0.35rem;">&mdash;</div>
+        <p id="bmi-range" style="color:#4b5563; margin-top:0.75rem;"></p>
+      </section>
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -127,5 +159,37 @@
     });
   </script>
   <script src="nutrition-tracker.js"></script>
+  <!-- BMI & Health Score — uses the same bmi-calc.js that the automated tests import -->
+  <script src="bmi-calc.js"></script>
+  <script>
+    (function () {
+      const form = document.getElementById("bmi-form");
+      if (!form) return;
+      const err = document.getElementById("bmi-error");
+      const catColor = { Underweight: "#2563eb", Normal: "#16a34a", Overweight: "#d97706", Obese: "#dc2626" };
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        err.textContent = "";
+        const h = parseFloat(document.getElementById("bmi-height").value);
+        const w = parseFloat(document.getElementById("bmi-weight").value);
+        try {
+          const bmi = calculateBMI(w, h);
+          const cat = classifyBMI(bmi);
+          const score = healthScore(bmi);
+          const range = idealWeightRange(h);
+          const catEl = document.getElementById("bmi-category");
+          document.getElementById("bmi-number").textContent = bmi.toFixed(1);
+          catEl.textContent = cat;
+          catEl.style.color = catColor[cat] || "#111827";
+          document.getElementById("bmi-score-fill").style.width = score + "%";
+          document.getElementById("bmi-score-text").textContent = score + " / 100";
+          document.getElementById("bmi-range").textContent =
+            "Healthy weight range for your height: " + range.min + " kg – " + range.max + " kg.";
+        } catch (_) {
+          err.textContent = "Please enter a valid height and weight.";
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
